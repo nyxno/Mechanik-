@@ -256,3 +256,18 @@ main { padding-block: 24px 60px; padding-left: max(20px, env(safe-area-inset-lef
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 details summary { cursor: pointer; font-weight: 600; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Schmale Bildschirme: nichts darf breiter werden als der Viewport */
+select { max-width: 100%; min-width: 0; }
+.page-head > * { min-width: 0; max-width: 100%; }
+.pill { white-space: normal; }
+.topic-item .meta { max-width: 40vw; }
+@media (max-width: 600px) {
+  .page-head .stack { align-items: stretch !important; width: 100%; }
+  .page-head select { width: 100%; }
+  .topic-item { grid-template-columns: 28px minmax(0, 1fr); }
+  .topic-item .meta { grid-column: 2; justify-content: flex-start; max-width: none; }
+  .topic-item .num { align-self: start; padding-top: 2px; }
+}
+.row > select { flex: 1 1 160px; min-width: 0; }
+.row > .row { min-width: 0; flex: 1 1 220px; }

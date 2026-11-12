@@ -137,7 +137,7 @@ export function sketchDrehmoment(alpha = 30, L = 260) {
   const t = ((x - fx) * ux + (y - fy) * uy);
   const px = fx + ux * t, py = fy + uy * t;
   return svg(440, 230,
-    line(x, y, ex, ey, { width: 8 }) + dot(x, y, 7) + dot(x, y, 3, C.bg || 'var(--surface)') +
+    line(x, y, ex, ey, { width: 8 }) + dot(x, y, 7) + dot(x, y, 3, 'var(--surface)') +
     label(x, y + 24, 'Drehpunkt', { anchor: 'middle', size: 12, color: C.muted }) +
     dashed(fx - ux * 160, fy - uy * 160, ex + ux * 40, ey + uy * 40) +
     arrowXY(fx, fy, ex, ey, { label: 'F', labelOffset: 12 }) +
@@ -219,15 +219,13 @@ export function sketchSchiefeEbene(alpha = 25) {
   const bx = x0 + L * 0.55, by = y0 - L * 0.55 * Math.tan(a);
   const ux = Math.cos(a), uy = -Math.sin(a);
   const nx = Math.sin(a), ny = Math.cos(a) * -1; // Normale nach oben
-  const w = 44, hh = 28;
-  const corner = [bx - ux * w / 2 - nx * 0, by - uy * w / 2];
-  const pts = [[corner[0], corner[1]], [corner[0] + ux * w, corner[1] + uy * w], [corner[0] + ux * w - nx * hh, corner[1] + uy * w + Math.cos(a) * hh * -1 * -1 - 0]];
-  // einfacher: Block als rotiertes Rechteck
-  const cx = bx + nx * hh / 2 * -1 * -1, cy = by - Math.cos(a) * hh / 2;
+  const hh = 28;
+  // Block als rotiertes Rechteck, Kräfte greifen im Blockmittelpunkt an
+  const cx = bx + nx * hh / 2, cy = by - Math.cos(a) * hh / 2;
   return svg(440, 230,
     `<polygon points="${x0},${y0} ${x0 + L},${y0} ${x0 + L},${y0 - hgt}" fill="${C.fill}" stroke="${C.line}" stroke-width="2"/>` +
     hatch(x0 - 10, y0, L + 20) +
-    `<g transform="translate(${bx},${by}) rotate(${-alpha})"><rect x="-22" y="-28" width="44" height="28" fill="${C.surface || 'var(--surface)'}" stroke="${C.line}" stroke-width="2"/></g>` +
+    `<g transform="translate(${bx},${by}) rotate(${-alpha})"><rect x="-22" y="-28" width="44" height="28" fill="var(--surface)" stroke="${C.line}" stroke-width="2"/></g>` +
     arrowXY(cx, cy, cx, cy + 80, { label: 'G', labelOffset: 12 }) +
     arrowXY(cx, cy, cx - nx * 70, cy - Math.cos(a) * 70, { color: C.force2, label: 'FN', labelOffset: 12, labelSide: -1 }) +
     arrowXY(cx, cy, cx + ux * 70, cy + uy * 70, { color: C.result, label: 'FH', labelOffset: -12, labelSide: -1 }) +
