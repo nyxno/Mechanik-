@@ -19,8 +19,7 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
 ## 3. Wochenende vermeiden
 - Fällt ein Termin auf **Samstag oder Sonntag**, wird er automatisch auf einen Werktag verschoben.
-- Vorschlag (bitte bestätigen): **Samstag → Freitag davor, Sonntag → Montag danach.**
-  Alternative: beides immer auf Freitag (früher, sicherer bei Prüffristen) oder beides auf Montag.
+- **Entschieden:** Samstag → Freitag davor, Sonntag → Montag danach.
 - Gilt für berechnete Termine; Erinnerung kommt dann am verschobenen Tag.
 - Später denkbar: Feiertage ebenfalls berücksichtigen.
 
@@ -32,6 +31,10 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 ## 5. Schlummer-Taste („Snooze“)
 - Einen Termin mit einer Taste **auf den nächsten Tag verschieben**.
 - Sowohl direkt in der Benachrichtigung („Morgen erinnern“) als auch in der App beim Eintrag.
-- Offen: Nur die Erinnerung verschieben (Fälligkeit bleibt) oder auch das Fälligkeitsdatum?
-  Vorschlag: nur die Erinnerung, damit die echte Prüffrist sichtbar bleibt.
-- Fällt der nächste Tag aufs Wochenende → nach Regel aus Punkt 3 auf Montag.
+- **Entschieden:** Nur die Erinnerung wird verschoben. Die echte Prüffrist bleibt sichtbar
+  (Ampel und Datum ändern sich durch Schlummern nicht).
+- **Entschieden:** Nach Erledigung der Arbeit startet die neue Prüffrist ab dem Erledigungsdatum
+  (Durchführungsdatum + Intervall, Wochenend-Regel aus Punkt 3 angewendet). Die Schlummer-Verschiebung
+  ist damit hinfällig.
+- Fällt der nächste Tag aufs Wochenende → Samstag auf Freitag geht beim Schlummern nicht (wäre heute),
+  daher beim Schlummern Wochenende immer auf Montag.
