@@ -1,0 +1,84 @@
+# Baut bei jedem Push automatisch eine Android-Installationsdatei (APK)
+# und veröffentlicht sie unter "Releases" im GitHub-Repository.
+name: Android APK bauen
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: APK bauen
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Code holen
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Java einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Gradle-Cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Abhängigkeiten installieren
+        run: npm ci --legacy-peer-deps
+
+      - name: Logik-Tests
+        run: npm test
+
+      - name: Typen prüfen
+        run: npx tsc --noEmit
+
+      - name: Android-Projekt erzeugen
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Festen Test-Signierschlüssel einsetzen
+        # Sonst würde jeder Build einen neuen Schlüssel bekommen und Updates liessen sich
+        # nicht über die alte Version installieren.
+        run: cp android-signing/debug.keystore android/app/debug.keystore
+
+      - name: APK bauen
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: APK umbenennen
+        run: |
+          mkdir -p ausgabe
+          cp android/app/build/outputs/apk/release/app-release.apk "ausgabe/wartungsapp-build-${{ github.run_number }}.apk"
+
+      - name: APK als Artefakt sichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: wartungsapp-apk
+          path: ausgabe/*.apk
+
+      - name: Release mit APK veröffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Testversion ${{ github.run_number }}
+          prerelease: ${{ github.ref != 'refs/heads/main' }}
+          body: |
+            Automatisch gebaute Testversion (Branch `${{ github.ref_name }}`, Commit ${{ github.sha }}).
+
+            **Installation am Android-Handy:** Die `.apk`-Datei unten antippen, herunterladen, öffnen.
+            Beim ersten Mal muss „Installation aus unbekannten Quellen“ für den Browser erlaubt werden.
+          files: ausgabe/*.apk

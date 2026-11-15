@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "Wartung & Prüfung",
+    "slug": "wartungsapp",
+    "version": "0.1.0",
+    "scheme": "wartungsapp",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mechanik.wartungsapp"
+    },
+    "android": {
+      "package": "com.mechanik.wartungsapp",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Die App greift auf deine Fotos zu, um sie bei Einträgen und Prüfungen zu speichern.",
+          "cameraPermission": "Die App nutzt die Kamera, um Fotos bei Einträgen und Prüfungen aufzunehmen.",
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
