@@ -1,12 +1,16 @@
-// Eine Prüfung/Wartung erfassen: Datum, Beschreibung, Fotos.
-import { useState } from 'react';
+// Eine Prüfung/Wartung erfassen: Datum, Beschreibung, Fotos, nächster Termin.
+import { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungAnlegen, fotoSpeichern } from '@/db/repo';
-import { formatDeutsch, heute, parseDeutsch, plusTage } from '@/lib/datum';
+import { durchfuehrungAnlegen, eintragIntervall, eintragLaden, fotoSpeichern } from '@/db/repo';
+import type { EintragMitStatus } from '@/db/typen';
+import { formatDeutsch, heute, plusTage } from '@/lib/datum';
+import { intervallAddieren, intervallText } from '@/lib/intervall';
+import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import { fotosAusGalerie, fotosMitKamera } from '@/lib/fotos';
 import { Bildschirm } from '@/components/Bildschirm';
+import { DatumFeld } from '@/components/DatumFeld';
 import { Eingabe } from '@/components/Eingabe';
 import { FotoLeiste } from '@/components/FotoLeiste';
 import { Taste } from '@/components/Taste';
@@ -14,21 +18,31 @@ import { farben, groessen } from '@/theme';
 
 export default function DurchfuehrungErfassen() {
   const db = useSQLiteContext();
-  const { id, name, aufgabe } = useLocalSearchParams<{ id: string; name?: string; aufgabe?: string }>();
-  const [datumText, setDatumText] = useState(formatDeutsch(heute()));
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [eintrag, setEintrag] = useState<EintragMitStatus | null>(null);
+  const [datum, setDatum] = useState<string>(heute());
   const [beschreibung, setBeschreibung] = useState('');
   const [fotos, setFotos] = useState<string[]>([]);
+  /** Vom Benutzer gewählter nächster Termin; null = automatisch (Datum + Intervall). */
+  const [naechsterFest, setNaechsterFest] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
 
-  const datumIso = parseDeutsch(datumText);
+  useEffect(() => { eintragLaden(db, id).then(setEintrag); }, [db, id]);
+  if (!eintrag) return null;
+
+  const intervall = eintragIntervall(eintrag);
+  const berechnet = intervallAddieren(datum, intervall);
+  const naechster = naechsterFest ?? berechnet;
 
   const speichern = async () => {
-    if (!datumIso) return Alert.alert('Datum ungültig', 'Bitte im Format TT.MM.JJJJ eingeben.');
-    if (datumIso > heute()) return Alert.alert('Datum liegt in der Zukunft', 'Bitte ein Datum bis heute eingeben.');
+    if (datum > heute()) return Alert.alert('Datum liegt in der Zukunft', 'Bitte ein Datum bis heute wählen.');
+    if (naechster <= datum) return Alert.alert('Nächster Termin prüfen', 'Der nächste Termin muss nach dem Durchführungsdatum liegen.');
     setLaeuft(true);
     try {
-      const dId = await durchfuehrungAnlegen(db, id, datumIso, beschreibung || 'Durchgeführt');
+      const fest = naechsterFest && naechsterFest !== berechnet ? naechsterFest : null;
+      const dId = await durchfuehrungAnlegen(db, id, datum, beschreibung || 'Durchgeführt', fest);
       for (const f of fotos) await fotoSpeichern(db, { durchfuehrungId: dId }, f);
+      erinnerungenNeuPlanen(db);
       router.back();
     } finally {
       setLaeuft(false);
@@ -42,20 +56,13 @@ export default function DurchfuehrungErfassen() {
 
   return (
     <Bildschirm>
-      {name ? <Text style={s.titel}>{name}</Text> : null}
-      {aufgabe ? <Text style={s.aufgabe}>Aufgabe: {aufgabe}</Text> : null}
+      <Text style={s.titel}>{eintrag.name}</Text>
+      {eintrag.aufgabe ? <Text style={s.aufgabe}>Aufgabe: {eintrag.aufgabe}</Text> : null}
 
-      <Eingabe
-        label="Datum"
-        value={datumText}
-        onChangeText={setDatumText}
-        keyboardType="numbers-and-punctuation"
-        hinweis={datumIso ? undefined : 'Ungültiges Datum (TT.MM.JJJJ)'}
-        style={datumIso ? undefined : { borderColor: farben.gefahr }}
-      />
+      <DatumFeld label="Gemacht am" wert={datum} onChange={(d) => d && setDatum(d)} max={heute()} />
       <View style={s.schnell}>
-        <Taste titel="Heute" onPress={() => setDatumText(formatDeutsch(heute()))} art="sekundaer" klein style={{ flex: 1 }} />
-        <Taste titel="Gestern" onPress={() => setDatumText(formatDeutsch(plusTage(heute(), -1)))} art="sekundaer" klein style={{ flex: 1 }} />
+        <Taste titel="Heute" onPress={() => setDatum(heute())} art="sekundaer" klein style={{ flex: 1 }} />
+        <Taste titel="Gestern" onPress={() => setDatum(plusTage(heute(), -1))} art="sekundaer" klein style={{ flex: 1 }} />
       </View>
 
       <Eingabe
@@ -68,7 +75,20 @@ export default function DurchfuehrungErfassen() {
 
       <FotoLeiste titel="Fotos" dateien={fotos} onKamera={() => hinzu(fotosMitKamera)} onGalerie={() => hinzu(fotosAusGalerie)} onLoeschen={(d) => setFotos((f) => f.filter((x) => x !== d))} />
 
-      <Taste titel={laeuft ? 'Speichern …' : '✓ Als erledigt speichern'} onPress={speichern} deaktiviert={laeuft || !datumIso} />
+      <DatumFeld
+        label="Nächstes Mal fällig am"
+        wert={naechster}
+        onChange={(d) => setNaechsterFest(d)}
+        min={plusTage(datum, 1)}
+        hinweis={naechsterFest && naechsterFest !== berechnet
+          ? `Von Hand gewählt. Automatisch wäre: ${formatDeutsch(berechnet)} (${intervallText(intervall)}).`
+          : `Automatisch berechnet: ${intervallText(intervall)}. Antippen, um ein anderes Datum zu wählen.`}
+      />
+      {naechsterFest && naechsterFest !== berechnet ? (
+        <Taste titel="↺ Wieder automatisch" onPress={() => setNaechsterFest(null)} art="sekundaer" klein style={{ marginTop: -6, marginBottom: groessen.abstand }} />
+      ) : null}
+
+      <Taste titel={laeuft ? 'Speichern …' : '✓ Als erledigt speichern'} onPress={speichern} deaktiviert={laeuft} />
       <Taste titel="Abbrechen" onPress={() => router.back()} art="sekundaer" style={{ marginTop: 10 }} />
     </Bildschirm>
   );

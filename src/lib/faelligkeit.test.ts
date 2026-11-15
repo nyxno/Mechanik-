@@ -38,3 +38,54 @@ test('Intervall-Text', () => {
   assert.equal(intervallText({ wert: 1, einheit: 'jahre' }), 'jährlich');
   assert.equal(intervallText({ wert: 3, einheit: 'monate' }), 'alle 3 Monate');
 });
+
+import { naechsterTermin } from './faelligkeit';
+import { erinnerungsPlan, PlanEintrag } from './erinnerungsplan';
+import { zeitpunkt, istGueltigeUhrzeit } from './uhrzeit';
+
+test('fester Termin hat Vorrang vor Intervall', () => {
+  const j = { wert: 1, einheit: 'jahre' as const };
+  assert.equal(naechsterTermin('2026-01-10', j, null), '2027-01-10');
+  assert.equal(naechsterTermin('2026-01-10', j, '2026-12-01'), '2026-12-01');
+  assert.equal(naechsterTermin(null, j, '2026-12-01'), '2026-12-01');
+  assert.equal(naechsterTermin(null, j, null), null);
+  // Neuer Eintrag ohne Durchführung, aber mit Termin: nicht mehr "noch nie", sondern nach Datum
+  assert.equal(berechneFaelligkeit(null, j, '2026-11-15', '2026-11-20').status, 'bald');
+  assert.equal(berechneFaelligkeit(null, j, '2026-11-15', '2027-03-01').status, 'ok');
+});
+
+test('Uhrzeit', () => {
+  assert.ok(istGueltigeUhrzeit('07:30'));
+  assert.ok(!istGueltigeUhrzeit('24:00'));
+  assert.ok(!istGueltigeUhrzeit('7:30'));
+  const d = zeitpunkt('2026-11-20', '14:45');
+  assert.equal(d.getHours(), 14);
+  assert.equal(d.getMinutes(), 45);
+});
+
+test('Erinnerungsplan: Vorwarnung, Fälligkeit, Überfällig-Sammelmeldung', () => {
+  const j = { wert: 1, einheit: 'jahre' as const };
+  const basis = { aufgabe: 'Sichtprüfung', intervall: j, letzte: null, uhrzeit: null };
+  const eintraege: PlanEintrag[] = [
+    { ...basis, id: 'a', name: 'Therme', festerTermin: '2026-11-25', uhrzeit: '09:15' },
+    { ...basis, id: 'b', name: 'Leiter', festerTermin: '2026-11-01' },
+    { ...basis, id: 'c', name: 'Löscher', festerTermin: '2026-10-01' },
+    { ...basis, id: 'd', name: 'Ohne Termin', festerTermin: null },
+  ];
+  const jetzt = new Date(2026, 10, 15, 12, 0); // 15.11.2026 12:00
+  const plan = erinnerungsPlan(eintraege, { aktiv: true, uhrzeit: '07:00', vorwarnTage: 7 }, jetzt);
+  assert.equal(plan.length, 3);
+  // Vorwarnung 18.11. 09:15, Fälligkeit 25.11. 09:15, Sammelmeldung 16.11. 07:00 (heute 07:00 schon vorbei)
+  const [ueber, vor, faellig] = plan;
+  assert.equal(ueber.art, 'ueberfaellig');
+  assert.equal(ueber.wann.getDate(), 16);
+  assert.equal(ueber.titel, '❗ 2 Prüfungen überfällig');
+  assert.equal(vor.art, 'vorwarnung');
+  assert.equal(vor.wann.getDate(), 18);
+  assert.equal(vor.wann.getHours(), 9);
+  assert.equal(faellig.art, 'faellig');
+  assert.equal(faellig.wann.getDate(), 25);
+  assert.equal(faellig.eintragId, 'a');
+
+  assert.equal(erinnerungsPlan(eintraege, { aktiv: false, uhrzeit: '07:00', vorwarnTage: 7 }, jetzt).length, 0);
+});

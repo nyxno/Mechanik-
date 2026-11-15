@@ -11,7 +11,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DB_NAME = 'wartungsapp.db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 /** Der lokale Standard-Betrieb, solange es keine Konten gibt. */
 export const LOKALER_BETRIEB_ID = 'lokal';
@@ -110,6 +110,18 @@ export async function migrieren(db: SQLiteDatabase): Promise<void> {
       );
     }
     version = 1;
+  }
+
+  if (version === 1) {
+    // Version 2: fester Fälligkeitstermin, Uhrzeit pro Eintrag, Einstellungen für Erinnerungen.
+    await db.execAsync(`
+      ALTER TABLE eintraege ADD COLUMN naechster_termin TEXT;  -- fest eingegebenes Fälligkeitsdatum (JJJJ-MM-TT) oder NULL
+      ALTER TABLE eintraege ADD COLUMN uhrzeit TEXT;           -- "HH:MM" für die Erinnerung oder NULL = Standard
+      INSERT OR IGNORE INTO einstellungen (schluessel, wert) VALUES ('erinnerung_aktiv', '1');
+      INSERT OR IGNORE INTO einstellungen (schluessel, wert) VALUES ('erinnerung_uhrzeit', '07:00');
+      INSERT OR IGNORE INTO einstellungen (schluessel, wert) VALUES ('vorwarnung_tage', '7');
+    `);
+    version = 2;
   }
 
   // Spätere Änderungen am Datenbank-Aufbau kommen hier als weitere "if (version === N)"-Blöcke.

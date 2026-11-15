@@ -18,6 +18,10 @@ export interface Eintrag {
   intervall_wert: number;
   intervall_einheit: IntervallEinheit;
   zusatzinfo: string;
+  /** Fest eingegebenes Fälligkeitsdatum. Hat Vorrang vor "letzte Durchführung + Intervall". */
+  naechster_termin: IsoDatum | null;
+  /** Uhrzeit "HH:MM" für die Erinnerung, null = Standard aus den Einstellungen. */
+  uhrzeit: string | null;
   created_at: string;
   updated_at: string;
 }

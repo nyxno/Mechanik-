@@ -2,7 +2,7 @@
   "expo": {
     "name": "Wartung & Prüfung",
     "slug": "wartungsapp",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "scheme": "wartungsapp",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,14 +12,17 @@
     },
     "android": {
       "package": "com.mechanik.wartungsapp",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +37,17 @@
           "photosPermission": "Die App greift auf deine Fotos zu, um sie bei Einträgen und Prüfungen zu speichern.",
           "cameraPermission": "Die App nutzt die Kamera, um Fotos bei Einträgen und Prüfungen aufzunehmen.",
           "microphonePermission": false
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/benachrichtigung-icon.png",
+          "color": "#1D4ED8",
+          "sounds": [
+            "./assets/sounds/pruefung_signal.wav"
+          ]
         }
       ]
     ],

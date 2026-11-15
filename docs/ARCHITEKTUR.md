@@ -31,7 +31,9 @@ betriebe ──< kategorien ──< eintraege ──< durchfuehrungen
 
 ### Fälligkeit
 
-`src/lib/faelligkeit.ts`: nächster Termin = letzte Durchführung + Intervall.
+`src/lib/faelligkeit.ts`: nächster Termin = fest eingegebener Termin (`eintraege.naechster_termin`),
+sonst letzte Durchführung + Intervall. Beim Erfassen einer Durchführung wird der feste Termin
+gelöscht (dann gilt wieder das Intervall) – außer man wählt dort selbst ein anderes Datum.
 
 - **rot** (überfällig): Termin liegt in der Vergangenheit, oder noch nie durchgeführt
 - **gelb** (bald fällig): innerhalb der Vorwarnzeit – 14 Tage, bei kurzen Intervallen ein Drittel des Intervalls
@@ -39,9 +41,20 @@ betriebe ──< kategorien ──< eintraege ──< durchfuehrungen
 
 Monate werden kalendarisch addiert (31.01. + 1 Monat = 28.02.).
 
+### Erinnerungen
+
+- `src/lib/erinnerungsplan.ts` rechnet aus, wann welche Meldung kommt (getestet).
+- `src/lib/erinnerungen.ts` plant sie mit `expo-notifications` lokal am Handy, kein Server nötig.
+  Bei App-Start, beim Verlassen der App und nach jeder Änderung werden alle Meldungen gelöscht
+  und neu geplant (höchstens 60 im Voraus). Nach einem Neustart des Handys stellt Android sie wieder her.
+- Signalton: `assets/sounds/pruefung_signal.wav`, Android-Kanal `pruefungen-signal-v1`.
+  Ein Android-Kanal behält seinen Ton für immer – für einen neuen Ton eine neue Kanal-ID vergeben.
+- Für minutengenaue Meldungen braucht Android 14+ die Erlaubnis „Wecker und Erinnerungen“
+  (Taste in den Einstellungen der App).
+
 ## Geplante Schritte (Reihenfolge-Vorschlag)
 
-1. **Erinnerungen** – `expo-notifications`, lokal am Handy geplant, kein Server nötig.
+1. ~~Erinnerungen~~ – erledigt in Version 0.2.
 2. **Konten + Abgleich** – Vorschlag: [Supabase](https://supabase.com) (Postgres, Login, Dateispeicher),
    Region EU (Frankfurt) für die DSGVO. Die App bleibt offline-fähig; ein Sync-Modul überträgt
    geänderte Zeilen (`updated_at > synced_at`) in beide Richtungen.

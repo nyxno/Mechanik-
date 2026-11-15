@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Kategorie } from '@/db/typen';
 import type { EintragDaten } from '@/db/repo';
-import { Intervall, istGueltigesIntervall } from '@/lib/intervall';
-import { heute, parseDeutsch, formatDeutsch } from '@/lib/datum';
+import { Intervall, intervallAddieren, istGueltigesIntervall } from '@/lib/intervall';
+import { formatDeutsch, heute } from '@/lib/datum';
 import { Eingabe } from './Eingabe';
+import { DatumFeld, UhrzeitFeld } from './DatumFeld';
 import { IntervallWahl } from './IntervallWahl';
 import { Taste } from './Taste';
 import { FotoLeiste } from './FotoLeiste';
@@ -21,6 +22,10 @@ export interface FormularErgebnis {
 
 interface Props {
   kategorien: Kategorie[];
+  /** Standard-Uhrzeit aus den Einstellungen, nur zur Anzeige. */
+  standardUhrzeit: string;
+  /** Beim Bearbeiten: letzte Durchführung, um den berechneten Termin anzuzeigen. */
+  letzteDurchfuehrung?: string | null;
   start?: Partial<EintragDaten>;
   neu: boolean;
   vorhandeneFotos?: string[];
@@ -31,27 +36,38 @@ interface Props {
   onAbbrechen: () => void;
 }
 
-export function EintragFormular({ kategorien, start, neu, vorhandeneFotos = [], onFotoLoeschen, onFotoKamera, onFotoGalerie, onSpeichern, onAbbrechen }: Props) {
+export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehrung = null, start, neu, vorhandeneFotos = [], onFotoLoeschen, onFotoKamera, onFotoGalerie, onSpeichern, onAbbrechen }: Props) {
   const [kategorieId, setKategorieId] = useState(start?.kategorie_id ?? kategorien[0]?.id ?? '');
   const [name, setName] = useState(start?.name ?? '');
   const [aufgabe, setAufgabe] = useState(start?.aufgabe ?? '');
   const [intervall, setIntervall] = useState<Intervall>(start?.intervall ?? { wert: 1, einheit: 'jahre' });
   const [zusatzinfo, setZusatzinfo] = useState(start?.zusatzinfo ?? '');
-  const [zuletztText, setZuletztText] = useState('');
+  const [naechster, setNaechster] = useState<string | null>(start?.naechster_termin ?? null);
+  const [uhrzeit, setUhrzeit] = useState<string | null>(start?.uhrzeit ?? null);
+  const [zuletzt, setZuletzt] = useState<string | null>(null);
   const [neueFotos, setNeueFotos] = useState<string[]>([]);
   const [laeuft, setLaeuft] = useState(false);
 
-  const zuletztIso = zuletztText.trim() ? parseDeutsch(zuletztText) : null;
-  const zuletztFehler = zuletztText.trim() !== '' && !zuletztIso;
+  // Was ohne festes Datum herauskäme (nur Anzeige)
+  const basis = neu ? zuletzt : letzteDurchfuehrung;
+  const berechnet = basis && istGueltigesIntervall(intervall) ? intervallAddieren(basis, intervall) : null;
+  const terminHinweis = naechster
+    ? 'Fester Termin. Nach der nächsten Durchführung wird wieder mit dem Intervall gerechnet.'
+    : berechnet
+      ? `Leer = automatisch: ${formatDeutsch(berechnet)} (letzte Durchführung + Intervall)`
+      : 'Leer = wird nach der ersten Durchführung aus dem Intervall berechnet.';
 
   const speichern = async () => {
     if (!name.trim()) return Alert.alert('Name fehlt', 'Bitte gib dem Eintrag einen Namen, z. B. „Therme Halle 2“.');
     if (!kategorieId) return Alert.alert('Kategorie fehlt', 'Bitte wähle eine Kategorie.');
     if (!istGueltigesIntervall(intervall)) return Alert.alert('Intervall ungültig', 'Bitte gib eine Zahl ab 1 ein.');
-    if (zuletztFehler) return Alert.alert('Datum ungültig', 'Bitte im Format TT.MM.JJJJ eingeben, z. B. 03.05.2026.');
     setLaeuft(true);
     try {
-      await onSpeichern({ daten: { kategorie_id: kategorieId, name, aufgabe, intervall, zusatzinfo }, zuletztAm: zuletztIso, neueFotos });
+      await onSpeichern({
+        daten: { kategorie_id: kategorieId, name, aufgabe, intervall, zusatzinfo, naechster_termin: naechster, uhrzeit },
+        zuletztAm: zuletzt,
+        neueFotos,
+      });
     } finally {
       setLaeuft(false);
     }
@@ -79,19 +95,32 @@ export function EintragFormular({ kategorien, start, neu, vorhandeneFotos = [], 
       <Eingabe label="Name" value={name} onChangeText={setName} placeholder="z. B. Therme Halle 2" />
       <Eingabe label="Was ist zu machen?" value={aufgabe} onChangeText={setAufgabe} placeholder="z. B. Sichtprüfung, Brenner reinigen, Abgasmessung" mehrzeilig />
       <IntervallWahl wert={intervall} onChange={setIntervall} />
-      <Eingabe label="Zusatzinfo" value={zusatzinfo} onChangeText={setZusatzinfo} placeholder="Standort, Typ, Seriennummer, Hinweise …" mehrzeilig />
 
       {neu ? (
-        <Eingabe
+        <DatumFeld
           label="Zuletzt gemacht am (optional)"
-          value={zuletztText}
-          onChangeText={setZuletztText}
-          placeholder={`z. B. ${formatDeutsch(heute())}`}
-          keyboardType="numbers-and-punctuation"
-          hinweis={zuletztFehler ? 'Ungültiges Datum (TT.MM.JJJJ)' : 'Wenn leer, gilt der Eintrag als „noch nie durchgeführt“.'}
-          style={zuletztFehler ? { borderColor: farben.gefahr } : undefined}
+          wert={zuletzt}
+          onChange={setZuletzt}
+          max={heute()}
+          leerText="Noch nie / unbekannt"
         />
       ) : null}
+      <DatumFeld
+        label="Nächstes Mal fällig am"
+        wert={naechster}
+        onChange={setNaechster}
+        leerText={berechnet ? `Automatisch (${formatDeutsch(berechnet)})` : 'Automatisch berechnen'}
+        hinweis={terminHinweis}
+      />
+      <UhrzeitFeld
+        label="Uhrzeit der Erinnerung"
+        wert={uhrzeit}
+        onChange={setUhrzeit}
+        leerText={`Standard (${standardUhrzeit} Uhr)`}
+        hinweis="Um diese Uhrzeit kommt die Benachrichtigung aufs Handy."
+      />
+
+      <Eingabe label="Zusatzinfo" value={zusatzinfo} onChangeText={setZusatzinfo} placeholder="Standort, Typ, Seriennummer, Hinweise …" mehrzeilig />
 
       <FotoLeiste
         titel="Fotos zum Eintrag"

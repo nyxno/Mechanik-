@@ -3,6 +3,9 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import * as Crypto from 'expo-crypto';
 import { jetztIso } from '@/lib/datum';
+import { berechneFaelligkeit } from '@/lib/faelligkeit';
+import type { ErinnerungsEinstellungen, PlanEintrag } from '@/lib/erinnerungsplan';
+import { istGueltigeUhrzeit, STANDARD_UHRZEIT } from '@/lib/uhrzeit';
 import type { Intervall } from '@/lib/intervall';
 import { LOKALER_BETRIEB_ID } from './schema';
 import type { Durchfuehrung, Eintrag, EintragMitStatus, Foto, Kategorie } from './typen';
@@ -82,24 +85,28 @@ export interface EintragDaten {
   aufgabe: string;
   intervall: Intervall;
   zusatzinfo: string;
+  naechster_termin: string | null;
+  uhrzeit: string | null;
 }
 
 export async function eintragAnlegen(db: SQLiteDatabase, d: EintragDaten): Promise<string> {
   const id = neueId();
   const t = jetztIso();
   await db.runAsync(
-    `INSERT INTO eintraege (id, betrieb_id, kategorie_id, name, aufgabe, intervall_wert, intervall_einheit, zusatzinfo, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    id, betrieb(), d.kategorie_id, d.name.trim(), d.aufgabe.trim(), d.intervall.wert, d.intervall.einheit, d.zusatzinfo.trim(), t, t,
+    `INSERT INTO eintraege (id, betrieb_id, kategorie_id, name, aufgabe, intervall_wert, intervall_einheit, zusatzinfo, naechster_termin, uhrzeit, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    id, betrieb(), d.kategorie_id, d.name.trim(), d.aufgabe.trim(), d.intervall.wert, d.intervall.einheit, d.zusatzinfo.trim(), d.naechster_termin, d.uhrzeit, t, t,
   );
   return id;
 }
 
 export async function eintragAendern(db: SQLiteDatabase, id: string, d: EintragDaten): Promise<void> {
   await db.runAsync(
-    `UPDATE eintraege SET kategorie_id = ?, name = ?, aufgabe = ?, intervall_wert = ?, intervall_einheit = ?, zusatzinfo = ?, updated_at = ?
+    `UPDATE eintraege SET kategorie_id = ?, name = ?, aufgabe = ?, intervall_wert = ?, intervall_einheit = ?, zusatzinfo = ?,
+            naechster_termin = ?, uhrzeit = ?, updated_at = ?
       WHERE id = ?`,
-    d.kategorie_id, d.name.trim(), d.aufgabe.trim(), d.intervall.wert, d.intervall.einheit, d.zusatzinfo.trim(), jetztIso(), id,
+    d.kategorie_id, d.name.trim(), d.aufgabe.trim(), d.intervall.wert, d.intervall.einheit, d.zusatzinfo.trim(),
+    d.naechster_termin, d.uhrzeit, jetztIso(), id,
   );
 }
 
@@ -123,13 +130,22 @@ export async function durchfuehrungenLaden(db: SQLiteDatabase, eintragId: string
   );
 }
 
-export async function durchfuehrungAnlegen(db: SQLiteDatabase, eintragId: string, datum: string, beschreibung: string): Promise<string> {
+/**
+ * Durchführung speichern. naechsterTermin: fest eingegebener nächster Termin, oder null =
+ * ab jetzt wieder aus Datum + Intervall berechnen.
+ */
+export async function durchfuehrungAnlegen(
+  db: SQLiteDatabase, eintragId: string, datum: string, beschreibung: string, naechsterTermin: string | null,
+): Promise<string> {
   const id = neueId();
   const t = jetztIso();
-  await db.runAsync(
-    `INSERT INTO durchfuehrungen (id, betrieb_id, eintrag_id, datum, beschreibung, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    id, betrieb(), eintragId, datum, beschreibung.trim(), t, t,
-  );
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `INSERT INTO durchfuehrungen (id, betrieb_id, eintrag_id, datum, beschreibung, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      id, betrieb(), eintragId, datum, beschreibung.trim(), t, t,
+    );
+    await db.runAsync('UPDATE eintraege SET naechster_termin = ?, updated_at = ? WHERE id = ?', naechsterTermin, t, eintragId);
+  });
   return id;
 }
 
@@ -170,7 +186,44 @@ export async function fotoLoeschen(db: SQLiteDatabase, id: string): Promise<void
   await db.runAsync('UPDATE fotos SET deleted_at = ? WHERE id = ?', jetztIso(), id);
 }
 
-// Hilfsfunktion für die Übersicht
+// ---------- Einstellungen ----------
+
+export async function einstellungenLaden(db: SQLiteDatabase): Promise<ErinnerungsEinstellungen> {
+  const rows = await db.getAllAsync<{ schluessel: string; wert: string }>('SELECT schluessel, wert FROM einstellungen');
+  const m = new Map(rows.map((r) => [r.schluessel, r.wert]));
+  const uhr = m.get('erinnerung_uhrzeit');
+  const tage = parseInt(m.get('vorwarnung_tage') ?? '7', 10);
+  return {
+    aktiv: (m.get('erinnerung_aktiv') ?? '1') === '1',
+    uhrzeit: istGueltigeUhrzeit(uhr) ? uhr : STANDARD_UHRZEIT,
+    vorwarnTage: isNaN(tage) ? 7 : tage,
+  };
+}
+
+export async function einstellungenSpeichern(db: SQLiteDatabase, e: ErinnerungsEinstellungen): Promise<void> {
+  const sql = 'INSERT OR REPLACE INTO einstellungen (schluessel, wert) VALUES (?, ?)';
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(sql, 'erinnerung_aktiv', e.aktiv ? '1' : '0');
+    await db.runAsync(sql, 'erinnerung_uhrzeit', e.uhrzeit);
+    await db.runAsync(sql, 'vorwarnung_tage', String(e.vorwarnTage));
+  });
+}
+
+// ---------- Hilfsfunktionen ----------
+
 export function eintragIntervall(e: Eintrag): Intervall {
   return { wert: e.intervall_wert, einheit: e.intervall_einheit };
+}
+
+/** Fälligkeit eines Eintrags für heute. */
+export function eintragFaelligkeit(e: EintragMitStatus, heuteIso: string) {
+  return berechneFaelligkeit(e.letzte_durchfuehrung, eintragIntervall(e), heuteIso, e.naechster_termin);
+}
+
+/** Einträge in die Form bringen, die der Erinnerungsplan braucht. */
+export function zuPlanEintraegen(liste: EintragMitStatus[]): PlanEintrag[] {
+  return liste.map((e) => ({
+    id: e.id, name: e.name, aufgabe: e.aufgabe, intervall: eintragIntervall(e),
+    letzte: e.letzte_durchfuehrung, festerTermin: e.naechster_termin, uhrzeit: e.uhrzeit,
+  }));
 }

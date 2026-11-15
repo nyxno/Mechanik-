@@ -1,12 +1,13 @@
 // Startseite: alle Einträge nach Fälligkeit sortiert, mit Ampelfarben, Kategorie-Filter und Suche.
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Link, router, useFocusEffect } from 'expo-router';
+import { Link, router, Stack, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { eintraegeLaden, eintragIntervall, kategorienLaden } from '@/db/repo';
+import { eintraegeLaden, eintragFaelligkeit, kategorienLaden } from '@/db/repo';
+import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import type { EintragMitStatus, Kategorie } from '@/db/typen';
-import { berechneFaelligkeit, sortierWert, Status } from '@/lib/faelligkeit';
+import { sortierWert, Status } from '@/lib/faelligkeit';
 import { heute } from '@/lib/datum';
 import { EintragKarte } from '@/components/EintragKarte';
 import { Taste } from '@/components/Taste';
@@ -27,7 +28,7 @@ export default function Uebersicht() {
   }, [db]);
 
   // Jedes Mal neu laden, wenn man auf diese Seite zurückkommt.
-  useFocusEffect(useCallback(() => { laden(); }, [laden]));
+  useFocusEffect(useCallback(() => { laden(); erinnerungenNeuPlanen(db); }, [laden, db]));
 
   const h = heute();
   const liste = useMemo(() => {
@@ -35,7 +36,7 @@ export default function Uebersicht() {
     return eintraege
       .filter((e) => !filterKategorie || e.kategorie_id === filterKategorie)
       .filter((e) => !s || e.name.toLowerCase().includes(s) || e.aufgabe.toLowerCase().includes(s) || e.zusatzinfo.toLowerCase().includes(s) || e.kategorie_name.toLowerCase().includes(s))
-      .map((e) => ({ e, f: berechneFaelligkeit(e.letzte_durchfuehrung, eintragIntervall(e), h) }))
+      .map((e) => ({ e, f: eintragFaelligkeit(e, h) }))
       .sort((a, b) => sortierWert(a.f) - sortierWert(b.f) || a.e.name.localeCompare(b.e.name, 'de'));
   }, [eintraege, filterKategorie, suche, h]);
 
@@ -47,6 +48,15 @@ export default function Uebersicht() {
 
   return (
     <View style={s.seite}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable onPress={() => router.push('/einstellungen')} hitSlop={10} style={({ pressed }) => [s.kopfTaste, pressed && { opacity: 0.6 }]}>
+              <Text style={s.kopfTasteText}>🔔 Erinnerungen</Text>
+            </Pressable>
+          ),
+        }}
+      />
       <View style={s.kopf}>
         <View style={s.ampel}>
           <Zaehler farbe={farben.rot} zahl={zaehler.ueberfaellig + zaehler.nie} text="überfällig" />
@@ -118,6 +128,8 @@ function Chip({ aktiv, text, onPress }: { aktiv: boolean; text: string; onPress:
 const s = StyleSheet.create({
   seite: { flex: 1, backgroundColor: farben.hintergrund },
   kopf: { padding: groessen.abstand, paddingBottom: 8, gap: 10 },
+  kopfTaste: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, backgroundColor: farben.grauHell },
+  kopfTasteText: { fontSize: 16, fontWeight: '700', color: farben.primaer },
   ampel: { flexDirection: 'row', gap: 8 },
   zaehler: { flex: 1, borderRadius: groessen.radius, paddingVertical: 10, alignItems: 'center' },
   zaehlerZahl: { color: '#fff', fontSize: 26, fontWeight: '800' },

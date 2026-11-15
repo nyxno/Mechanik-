@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { eintragAendern, eintragIntervall, eintragLaden, eintragLoeschen, fotoLoeschen, fotoSpeichern, fotosZuEintrag, kategorienLaden } from '@/db/repo';
+import { eintragAendern, eintragIntervall, eintragLaden, eintragLoeschen, einstellungenLaden, fotoLoeschen, fotoSpeichern, fotosZuEintrag, kategorienLaden } from '@/db/repo';
+import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
+import { STANDARD_UHRZEIT } from '@/lib/uhrzeit';
 import type { EintragMitStatus, Foto, Kategorie } from '@/db/typen';
 import { fotoDateiLoeschen, fotosAusGalerie, fotosMitKamera } from '@/lib/fotos';
 import { Bildschirm } from '@/components/Bildschirm';
@@ -15,10 +17,11 @@ export default function EintragBearbeiten() {
   const [eintrag, setEintrag] = useState<EintragMitStatus | null>(null);
   const [kategorien, setKategorien] = useState<Kategorie[]>([]);
   const [fotos, setFotos] = useState<Foto[]>([]);
+  const [standardUhrzeit, setStandardUhrzeit] = useState(STANDARD_UHRZEIT);
 
   const laden = useCallback(async () => {
-    const [e, k, f] = await Promise.all([eintragLaden(db, id), kategorienLaden(db), fotosZuEintrag(db, id)]);
-    setEintrag(e); setKategorien(k); setFotos(f);
+    const [e, k, f, ein] = await Promise.all([eintragLaden(db, id), kategorienLaden(db), fotosZuEintrag(db, id), einstellungenLaden(db)]);
+    setEintrag(e); setKategorien(k); setFotos(f); setStandardUhrzeit(ein.uhrzeit);
   }, [db, id]);
   useEffect(() => { laden(); }, [laden]);
 
@@ -27,7 +30,7 @@ export default function EintragBearbeiten() {
   const loeschen = () =>
     Alert.alert(`„${eintrag.name}“ löschen?`, 'Der Eintrag mit allen Durchführungen und Fotos wird gelöscht.', [
       { text: 'Abbrechen', style: 'cancel' },
-      { text: 'Löschen', style: 'destructive', onPress: async () => { await eintragLoeschen(db, id); router.dismissTo('/'); } },
+      { text: 'Löschen', style: 'destructive', onPress: async () => { await eintragLoeschen(db, id); erinnerungenNeuPlanen(db); router.dismissTo('/'); } },
     ]);
 
   return (
@@ -35,7 +38,12 @@ export default function EintragBearbeiten() {
       <EintragFormular
         neu={false}
         kategorien={kategorien}
-        start={{ kategorie_id: eintrag.kategorie_id, name: eintrag.name, aufgabe: eintrag.aufgabe, intervall: eintragIntervall(eintrag), zusatzinfo: eintrag.zusatzinfo }}
+        standardUhrzeit={standardUhrzeit}
+        letzteDurchfuehrung={eintrag.letzte_durchfuehrung}
+        start={{
+          kategorie_id: eintrag.kategorie_id, name: eintrag.name, aufgabe: eintrag.aufgabe, intervall: eintragIntervall(eintrag),
+          zusatzinfo: eintrag.zusatzinfo, naechster_termin: eintrag.naechster_termin, uhrzeit: eintrag.uhrzeit,
+        }}
         vorhandeneFotos={fotos.map((f) => f.datei)}
         onFotoLoeschen={async (datei) => {
           const f = fotos.find((x) => x.datei === datei);
@@ -50,6 +58,7 @@ export default function EintragBearbeiten() {
         onSpeichern={async ({ daten, neueFotos }) => {
           await eintragAendern(db, id, daten);
           for (const f of neueFotos) await fotoSpeichern(db, { eintragId: id }, f);
+          erinnerungenNeuPlanen(db);
           router.back();
         }}
       />

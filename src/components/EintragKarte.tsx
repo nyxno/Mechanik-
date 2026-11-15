@@ -1,8 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import type { EintragMitStatus } from '@/db/typen';
-import { eintragIntervall } from '@/db/repo';
-import { berechneFaelligkeit } from '@/lib/faelligkeit';
+import { eintragFaelligkeit, eintragIntervall } from '@/db/repo';
 import { intervallText } from '@/lib/intervall';
 import { formatDeutsch, heute } from '@/lib/datum';
 import { farben, groessen, statusFarben } from '@/theme';
@@ -10,7 +9,7 @@ import { StatusBadge } from './StatusBadge';
 
 /** Eine Zeile in der Übersicht: Name, Kategorie, Ampel, nächster Termin. */
 export function EintragKarte({ eintrag, zeigeKategorie = true }: { eintrag: EintragMitStatus; zeigeKategorie?: boolean }) {
-  const f = berechneFaelligkeit(eintrag.letzte_durchfuehrung, eintragIntervall(eintrag), heute());
+  const f = eintragFaelligkeit(eintrag, heute());
   const sf = statusFarben(f.status);
   return (
     <Pressable

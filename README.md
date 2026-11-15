@@ -5,15 +5,19 @@ Thermen, Heizungen, Leitern, Feuerlöscher, Anschlagmittel, Druckbehälter, Masc
 
 Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 
-## Was die App kann (Version 0.1)
+## Was die App kann (Version 0.2)
 
 - **Kategorien** anlegen, umbenennen, löschen (z. B. Heizung, Brandschutz, Leitern)
 - **Einträge** je Kategorie: Name, Aufgabe, Intervall (frei wählbar), Zusatzinfo, Fotos
 - **Durchführungen** erfassen: Datum, Beschreibung, Fotos – der Verlauf bleibt sichtbar
-- **Fälligkeit** wird automatisch berechnet (letzte Durchführung + Intervall)
+- **Fälligkeit** wird automatisch berechnet (letzte Durchführung + Intervall) – oder du gibst das
+  **Fälligkeitsdatum direkt ein** (Kalender antippen)
 - **Übersicht** mit Ampel: rot = überfällig, gelb = bald fällig, grün = in Ordnung; Filter und Suche
+- **Erinnerungen** aufs Handy mit eigenem Signalton: Vorwarnung (z. B. 1 Woche vorher) und am Tag
+  der Fälligkeit, zur gewählten **Uhrzeit** (pro Eintrag oder Standard). Überfälliges wird täglich gemeldet.
+  Einstellungen über „🔔 Erinnerungen“ oben rechts.
 
-Noch nicht enthalten: Erinnerungen (Benachrichtigung), Benutzerkonten, Abgleich zwischen Geräten, PDF-Export.
+Noch nicht enthalten: Benutzerkonten, Abgleich zwischen Geräten, PDF-Export.
 Die Datenstruktur ist dafür aber schon vorbereitet (siehe `docs/ARCHITEKTUR.md`).
 
 ## App aufs Handy bekommen

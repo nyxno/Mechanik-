@@ -3,9 +3,9 @@ import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungenLaden, durchfuehrungLoeschen, eintragIntervall, eintragLaden, fotosZuDurchfuehrungen, fotosZuEintrag } from '@/db/repo';
+import { durchfuehrungenLaden, durchfuehrungLoeschen, eintragFaelligkeit, eintragIntervall, eintragLaden, einstellungenLaden, fotosZuDurchfuehrungen, fotosZuEintrag } from '@/db/repo';
+import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import type { Durchfuehrung, EintragMitStatus, Foto } from '@/db/typen';
-import { berechneFaelligkeit } from '@/lib/faelligkeit';
 import { intervallText } from '@/lib/intervall';
 import { formatDeutsch, heute } from '@/lib/datum';
 import { fotoDateiLoeschen } from '@/lib/fotos';
@@ -24,16 +24,18 @@ export default function EintragDetail() {
   const [verlauf, setVerlauf] = useState<Durchfuehrung[]>([]);
   const [verlaufFotos, setVerlaufFotos] = useState<Foto[]>([]);
   const [ansicht, setAnsicht] = useState<string | null>(null);
+  const [standardUhrzeit, setStandardUhrzeit] = useState('07:00');
 
   const laden = useCallback(async () => {
-    const [e, f, v, vf] = await Promise.all([eintragLaden(db, id), fotosZuEintrag(db, id), durchfuehrungenLaden(db, id), fotosZuDurchfuehrungen(db, id)]);
-    setEintrag(e); setFotos(f); setVerlauf(v); setVerlaufFotos(vf);
+    const [e, f, v, vf, ein] = await Promise.all([eintragLaden(db, id), fotosZuEintrag(db, id), durchfuehrungenLaden(db, id), fotosZuDurchfuehrungen(db, id), einstellungenLaden(db)]);
+    setEintrag(e); setFotos(f); setVerlauf(v); setVerlaufFotos(vf); setStandardUhrzeit(ein.uhrzeit);
   }, [db, id]);
   useFocusEffect(useCallback(() => { laden(); }, [laden]));
 
   if (!eintrag) return null;
 
-  const f = berechneFaelligkeit(eintrag.letzte_durchfuehrung, eintragIntervall(eintrag), heute());
+  const f = eintragFaelligkeit(eintrag, heute());
+  const uhr = eintrag.uhrzeit ?? standardUhrzeit;
   const sf = statusFarben(f.status);
 
   const durchfuehrungEntfernen = (d: Durchfuehrung) =>
@@ -44,6 +46,7 @@ export default function EintragDetail() {
         onPress: async () => {
           verlaufFotos.filter((x) => x.durchfuehrung_id === d.id).forEach((x) => fotoDateiLoeschen(x.datei));
           await durchfuehrungLoeschen(db, d.id);
+          erinnerungenNeuPlanen(db);
           laden();
         },
       },
@@ -56,12 +59,17 @@ export default function EintragDetail() {
         <Text style={s.name}>{eintrag.name}</Text>
         <StatusBadge status={f.status} />
         <Text style={[s.faellig, { color: sf.vorder }]}>{f.text}</Text>
+        {f.naechster ? (
+          <Text style={s.termin}>
+            📅 {formatDeutsch(f.naechster)}  🕒 {uhr} Uhr{eintrag.naechster_termin ? '  (fester Termin)' : ''}
+          </Text>
+        ) : null}
         <Text style={s.klein}>Intervall: {intervallText(eintragIntervall(eintrag))}</Text>
       </View>
 
       <Taste
         titel="✓ Jetzt durchgeführt"
-        onPress={() => router.push({ pathname: '/eintrag/[id]/durchfuehrung', params: { id, name: eintrag.name, aufgabe: eintrag.aufgabe } })}
+        onPress={() => router.push({ pathname: '/eintrag/[id]/durchfuehrung', params: { id } })}
       />
       <Taste titel="✎ Bearbeiten" onPress={() => router.push({ pathname: '/eintrag/[id]/bearbeiten', params: { id } })} art="sekundaer" klein style={{ marginTop: 10, marginBottom: 20 }} />
 
@@ -105,6 +113,7 @@ const s = StyleSheet.create({
   status: { borderRadius: groessen.radius, borderWidth: 2, padding: 16, marginBottom: 16, gap: 8 },
   name: { fontSize: groessen.titel, fontWeight: '800', color: farben.text },
   faellig: { fontSize: groessen.schriftGross, fontWeight: '700' },
+  termin: { fontSize: groessen.schrift, fontWeight: '600', color: farben.text },
   klein: { fontSize: groessen.schriftKlein, color: farben.textLeicht },
   abschnitt: { marginBottom: 16 },
   abschnittTitel: { fontSize: groessen.schrift, fontWeight: '600', color: farben.text, marginBottom: 6 },

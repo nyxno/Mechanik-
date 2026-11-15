@@ -26,16 +26,31 @@ export function warnTage(intervall: Intervall, standard = WARNUNG_TAGE_STANDARD)
   return Math.max(1, Math.min(standard, drittel));
 }
 
+/**
+ * Nächster Termin: ein fest eingegebenes Datum hat Vorrang,
+ * sonst letzte Durchführung + Intervall, sonst null (noch nie gemacht, kein Termin).
+ */
+export function naechsterTermin(
+  letzteDurchfuehrung: IsoDatum | null,
+  intervall: Intervall,
+  festerTermin: IsoDatum | null = null,
+): IsoDatum | null {
+  if (festerTermin) return festerTermin;
+  if (letzteDurchfuehrung) return intervallAddieren(letzteDurchfuehrung, intervall);
+  return null;
+}
+
 export function berechneFaelligkeit(
   letzteDurchfuehrung: IsoDatum | null,
   intervall: Intervall,
   heuteIso: IsoDatum,
+  festerTermin: IsoDatum | null = null,
   warnStandard = WARNUNG_TAGE_STANDARD,
 ): Faelligkeit {
-  if (!letzteDurchfuehrung) {
+  const naechster = naechsterTermin(letzteDurchfuehrung, intervall, festerTermin);
+  if (!naechster) {
     return { status: 'nie', naechster: null, tage: null, text: 'Noch nie durchgeführt' };
   }
-  const naechster = intervallAddieren(letzteDurchfuehrung, intervall);
   const tage = tageZwischen(heuteIso, naechster);
   let status: Status;
   if (tage < 0) status = 'ueberfaellig';
