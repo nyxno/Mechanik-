@@ -1,9 +1,10 @@
-// Einstellungen für Erinnerungen: an/aus, Standard-Uhrzeit, Vorwarnung, Test mit Signalton.
+// Einstellungen: Name des Prüfers; Erinnerungen an/aus, Standard-Uhrzeit, Vorwarnung, Test mit Signalton.
 import { useCallback, useState } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { einstellungenLaden, einstellungenSpeichern } from '@/db/repo';
+import { einstellungenLaden, einstellungenSpeichern, prueferLaden, prueferSpeichern } from '@/db/repo';
+import { Eingabe } from '@/components/Eingabe';
 import type { ErinnerungsEinstellungen } from '@/lib/erinnerungsplan';
 import { berechtigungAnfragen, berechtigungStatus, erinnerungenNeuPlanen, genaueUhrzeitErlauben, testErinnerung } from '@/lib/erinnerungen';
 import { Bildschirm } from '@/components/Bildschirm';
@@ -25,9 +26,11 @@ export default function Einstellungen() {
   const [e, setE] = useState<ErinnerungsEinstellungen | null>(null);
   const [status, setStatus] = useState<{ erlaubt: boolean; genau: boolean } | null>(null);
   const [geplant, setGeplant] = useState<number | null>(null);
+  const [pruefer, setPruefer] = useState('');
 
   const laden = useCallback(async () => {
     setE(await einstellungenLaden(db));
+    setPruefer(await prueferLaden(db));
     setStatus(await berechtigungStatus());
     setGeplant(await erinnerungenNeuPlanen(db));
   }, [db]);
@@ -43,6 +46,18 @@ export default function Einstellungen() {
 
   return (
     <Bildschirm>
+      <Eingabe
+        label="👷 Name des Prüfers"
+        value={pruefer}
+        onChangeText={setPruefer}
+        onEndEditing={() => prueferSpeichern(db, pruefer)}
+        onSubmitEditing={() => prueferSpeichern(db, pruefer)}
+        placeholder="z. B. Max Muster"
+        returnKeyType="done"
+        hinweis="Wird bei jeder Durchführung automatisch eingetragen (änderbar)."
+      />
+      <Text style={s.abschnitt}>🔔 Erinnerungen</Text>
+
       {!status.erlaubt ? (
         <View style={[s.box, s.warnung]}>
           <Text style={s.boxTitel}>⚠ Benachrichtigungen sind nicht erlaubt</Text>
@@ -121,6 +136,7 @@ function Wahl({ aktiv, text, onPress }: { aktiv: boolean; text: string; onPress:
 
 const s = StyleSheet.create({
   label: { fontSize: groessen.schrift, fontWeight: '600', color: farben.text, marginBottom: 6 },
+  abschnitt: { fontSize: groessen.schriftGross, fontWeight: '800', color: farben.text, marginTop: 8, marginBottom: 12 },
   reihe: { flexDirection: 'row', gap: 8, marginBottom: groessen.abstand },
   wahl: { flexGrow: 1, minHeight: 56, paddingHorizontal: 16, borderRadius: groessen.radius, borderWidth: 2, borderColor: farben.rahmen, backgroundColor: farben.karte, alignItems: 'center', justifyContent: 'center' },
   wahlAktiv: { backgroundColor: farben.primaer, borderColor: farben.primaer },

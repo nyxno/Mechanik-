@@ -9,6 +9,9 @@ import { erinnerungsPlan } from './erinnerungsplan';
 /** Android: Ton eines Kanals lässt sich nach dem Anlegen nicht mehr ändern -> neuer Ton = neue Kanal-ID. */
 export const KANAL_ID = 'pruefungen-signal-v1';
 export const TON = 'pruefung_signal.wav';
+/** Benachrichtigungen zu einem Eintrag bekommen die Taste "Morgen erinnern". */
+export const KATEGORIE_EINTRAG = 'eintrag-erinnerung';
+export const AKTION_SCHLUMMERN = 'schlummern';
 
 let eingerichtet = false;
 
@@ -24,6 +27,9 @@ export async function erinnerungenEinrichten(): Promise<void> {
       shouldSetBadge: false,
     }),
   });
+  await Notifications.setNotificationCategoryAsync(KATEGORIE_EINTRAG, [
+    { identifier: AKTION_SCHLUMMERN, buttonTitle: '💤 Morgen erinnern', options: { opensAppToForeground: true } },
+  ]).catch(() => {});
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(KANAL_ID, {
       name: 'Fällige Prüfungen und Wartungen',
@@ -102,6 +108,7 @@ async function planen(db: SQLiteDatabase): Promise<number> {
         body: e.text,
         sound: TON,
         data: { eintragId: e.eintragId },
+        categoryIdentifier: e.eintragId ? KATEGORIE_EINTRAG : undefined,
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: {

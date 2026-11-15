@@ -1,8 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { berechneFaelligkeit, warnTage } from './faelligkeit';
-import { plusMonate, parseDeutsch, formatDeutsch, tageZwischen } from './datum';
+import { berechneFaelligkeit, naechsterTermin, warnTage } from './faelligkeit';
+import { aufWerktag, formatDeutsch, montagDerWoche, parseDeutsch, plusMonate, schlummerZiel, tageZwischen } from './datum';
 import { intervallText } from './intervall';
+import { erinnerungsPlan, PlanEintrag } from './erinnerungsplan';
+import { istGueltigeUhrzeit, zeitpunkt } from './uhrzeit';
+import { wochenGrenzen, wochenGruppe } from './woche';
+
+const jaehrlich = { wert: 1, einheit: 'jahre' as const };
+const f = (letzte: string | null, heute: string, festerTermin: string | null = null, einmalig = false) =>
+  berechneFaelligkeit({ letzte, intervall: jaehrlich, festerTermin, einmalig }, heute);
 
 test('Monate addieren klemmt auf Monatsende', () => {
   assert.equal(plusMonate('2026-01-31', 1), '2026-02-28');
@@ -18,14 +25,13 @@ test('deutsches Datum lesen und schreiben', () => {
 });
 
 test('Status: nie, überfällig, bald, ok', () => {
-  const jaehrlich = { wert: 1, einheit: 'jahre' as const };
-  assert.equal(berechneFaelligkeit(null, jaehrlich, '2026-11-15').status, 'nie');
-  assert.equal(berechneFaelligkeit('2025-01-01', jaehrlich, '2026-11-15').status, 'ueberfaellig');
-  assert.equal(berechneFaelligkeit('2025-11-20', jaehrlich, '2026-11-15').status, 'bald');
-  assert.equal(berechneFaelligkeit('2026-06-01', jaehrlich, '2026-11-15').status, 'ok');
-  const f = berechneFaelligkeit('2025-11-20', jaehrlich, '2026-11-15');
-  assert.equal(f.naechster, '2026-11-20');
-  assert.equal(f.tage, 5);
+  assert.equal(f(null, '2026-11-15').status, 'nie');
+  assert.equal(f('2025-01-01', '2026-11-15').status, 'ueberfaellig');
+  assert.equal(f('2025-11-20', '2026-11-15').status, 'bald');
+  assert.equal(f('2026-06-01', '2026-11-15').status, 'ok');
+  const x = f('2025-11-20', '2026-11-15');
+  assert.equal(x.naechster, '2026-11-20');
+  assert.equal(x.tage, 5);
 });
 
 test('Vorwarnzeit ist bei kurzen Intervallen kürzer', () => {
@@ -39,19 +45,50 @@ test('Intervall-Text', () => {
   assert.equal(intervallText({ wert: 3, einheit: 'monate' }), 'alle 3 Monate');
 });
 
-import { naechsterTermin } from './faelligkeit';
-import { erinnerungsPlan, PlanEintrag } from './erinnerungsplan';
-import { zeitpunkt, istGueltigeUhrzeit } from './uhrzeit';
-
 test('fester Termin hat Vorrang vor Intervall', () => {
-  const j = { wert: 1, einheit: 'jahre' as const };
-  assert.equal(naechsterTermin('2026-01-10', j, null), '2027-01-10');
-  assert.equal(naechsterTermin('2026-01-10', j, '2026-12-01'), '2026-12-01');
-  assert.equal(naechsterTermin(null, j, '2026-12-01'), '2026-12-01');
-  assert.equal(naechsterTermin(null, j, null), null);
-  // Neuer Eintrag ohne Durchführung, aber mit Termin: nicht mehr "noch nie", sondern nach Datum
-  assert.equal(berechneFaelligkeit(null, j, '2026-11-15', '2026-11-20').status, 'bald');
-  assert.equal(berechneFaelligkeit(null, j, '2026-11-15', '2027-03-01').status, 'ok');
+  assert.equal(naechsterTermin({ letzte: '2026-01-12', intervall: jaehrlich }), '2027-01-12');
+  assert.equal(naechsterTermin({ letzte: '2026-01-12', intervall: jaehrlich, festerTermin: '2026-12-01' }), '2026-12-01');
+  assert.equal(naechsterTermin({ letzte: null, intervall: jaehrlich, festerTermin: '2026-12-01' }), '2026-12-01');
+  assert.equal(naechsterTermin({ letzte: null, intervall: jaehrlich }), null);
+  assert.equal(f(null, '2026-11-15', '2026-11-20').status, 'bald');
+  assert.equal(f(null, '2026-11-15', '2027-03-01').status, 'ok');
+});
+
+test('Wochenende: Samstag -> Freitag, Sonntag -> Montag', () => {
+  assert.equal(aufWerktag('2026-11-21'), '2026-11-20'); // Sa -> Fr
+  assert.equal(aufWerktag('2026-11-22'), '2026-11-23'); // So -> Mo
+  assert.equal(aufWerktag('2026-11-18'), '2026-11-18'); // Mi bleibt
+  const x = f('2025-11-21', '2026-11-01'); // +1 Jahr = Sa 21.11.2026
+  assert.equal(x.naechster, '2026-11-20');
+  assert.equal(x.verschobenVon, '2026-11-21');
+  assert.equal(f(null, '2026-11-01', '2026-11-22').naechster, '2026-11-23'); // auch feste Termine
+});
+
+test('Einmalig: Termin nur aus festem Datum, nach Durchführung erledigt', () => {
+  assert.equal(f(null, '2026-11-15', '2026-11-30', true).status, 'ok');
+  assert.equal(f(null, '2026-11-15', null, true).status, 'nie');
+  const erl = f('2026-11-14', '2026-11-15', '2026-11-30', true);
+  assert.equal(erl.status, 'erledigt');
+  assert.equal(erl.naechster, null);
+  assert.equal(erl.text, 'Erledigt am 14.11.2026');
+});
+
+test('Schlummern: nächster Tag, Wochenende -> Montag', () => {
+  assert.equal(schlummerZiel('2026-11-17'), '2026-11-18'); // Di -> Mi
+  assert.equal(schlummerZiel('2026-11-20'), '2026-11-23'); // Fr -> Mo
+  assert.equal(schlummerZiel('2026-11-21'), '2026-11-23'); // Sa -> Mo
+  assert.equal(schlummerZiel('2026-11-15'), '2026-11-16'); // So -> Mo
+});
+
+test('Wochen: Montag bis Sonntag', () => {
+  assert.equal(montagDerWoche('2026-11-15'), '2026-11-09'); // Sonntag gehört zur alten Woche
+  const w = wochenGrenzen('2026-11-18');
+  assert.deepEqual(w, { dieseVon: '2026-11-16', dieseBis: '2026-11-22', naechsteVon: '2026-11-23', naechsteBis: '2026-11-29' });
+  const g = (fest: string) => wochenGruppe(f(null, '2026-11-18', fest), '2026-11-18');
+  assert.equal(g('2026-11-10'), 'ueberfaellig');
+  assert.equal(g('2026-11-20'), 'diese');
+  assert.equal(g('2026-11-26'), 'naechste');
+  assert.equal(g('2026-12-15'), null);
 });
 
 test('Uhrzeit', () => {
@@ -63,19 +100,20 @@ test('Uhrzeit', () => {
   assert.equal(d.getMinutes(), 45);
 });
 
+const basis = { aufgabe: 'Sichtprüfung', intervall: jaehrlich, letzte: null, uhrzeit: null };
+const einst = { aktiv: true, uhrzeit: '07:00', vorwarnTage: 7 };
+
 test('Erinnerungsplan: Vorwarnung, Fälligkeit, Überfällig-Sammelmeldung', () => {
-  const j = { wert: 1, einheit: 'jahre' as const };
-  const basis = { aufgabe: 'Sichtprüfung', intervall: j, letzte: null, uhrzeit: null };
   const eintraege: PlanEintrag[] = [
     { ...basis, id: 'a', name: 'Therme', festerTermin: '2026-11-25', uhrzeit: '09:15' },
-    { ...basis, id: 'b', name: 'Leiter', festerTermin: '2026-11-01' },
+    { ...basis, id: 'b', name: 'Leiter', festerTermin: '2026-11-03' },
     { ...basis, id: 'c', name: 'Löscher', festerTermin: '2026-10-01' },
     { ...basis, id: 'd', name: 'Ohne Termin', festerTermin: null },
+    { ...basis, id: 'e', name: 'Einmalig erledigt', festerTermin: '2026-12-01', einmalig: true, letzte: '2026-11-10' },
   ];
-  const jetzt = new Date(2026, 10, 15, 12, 0); // 15.11.2026 12:00
-  const plan = erinnerungsPlan(eintraege, { aktiv: true, uhrzeit: '07:00', vorwarnTage: 7 }, jetzt);
+  const jetzt = new Date(2026, 10, 15, 12, 0); // So 15.11.2026 12:00
+  const plan = erinnerungsPlan(eintraege, einst, jetzt);
   assert.equal(plan.length, 3);
-  // Vorwarnung 18.11. 09:15, Fälligkeit 25.11. 09:15, Sammelmeldung 16.11. 07:00 (heute 07:00 schon vorbei)
   const [ueber, vor, faellig] = plan;
   assert.equal(ueber.art, 'ueberfaellig');
   assert.equal(ueber.wann.getDate(), 16);
@@ -86,6 +124,22 @@ test('Erinnerungsplan: Vorwarnung, Fälligkeit, Überfällig-Sammelmeldung', () 
   assert.equal(faellig.art, 'faellig');
   assert.equal(faellig.wann.getDate(), 25);
   assert.equal(faellig.eintragId, 'a');
+  assert.equal(erinnerungsPlan(eintraege, { ...einst, aktiv: false }, jetzt).length, 0);
+});
 
-  assert.equal(erinnerungsPlan(eintraege, { aktiv: false, uhrzeit: '07:00', vorwarnTage: 7 }, jetzt).length, 0);
+test('Erinnerungsplan: Schlummern verschiebt nur die Erinnerung', () => {
+  const jetzt = new Date(2026, 10, 15, 12, 0);
+  const plan = erinnerungsPlan([
+    { ...basis, id: 'a', name: 'Therme', festerTermin: '2026-11-10', schlummernBis: '2026-11-16' },
+  ], einst, jetzt);
+  assert.equal(plan.length, 1); // keine Überfällig-Sammelmeldung, nur die Schlummer-Erinnerung
+  assert.equal(plan[0].art, 'schlummer');
+  assert.equal(plan[0].wann.getDate(), 16);
+  assert.ok(plan[0].text.includes('10.11.2026')); // echte Prüffrist bleibt sichtbar
+
+  // Abgelaufenes Schlummern wird ignoriert
+  const alt = erinnerungsPlan([
+    { ...basis, id: 'a', name: 'Therme', festerTermin: '2026-11-10', schlummernBis: '2026-11-12' },
+  ], einst, jetzt);
+  assert.equal(alt[0].art, 'ueberfaellig');
 });

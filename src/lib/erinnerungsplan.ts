@@ -1,5 +1,5 @@
 // Berechnet, wann welche Erinnerung kommen soll. Reine Rechnung, ohne Handy-Funktionen (darum testbar).
-import { ausDate, formatDeutsch, plusTage } from './datum';
+import { ausDate, formatDeutsch, formatMitTag, plusTage } from './datum';
 import { berechneFaelligkeit } from './faelligkeit';
 import type { Intervall } from './intervall';
 import { zeitpunkt } from './uhrzeit';
@@ -12,6 +12,9 @@ export interface PlanEintrag {
   letzte: string | null;
   festerTermin: string | null;
   uhrzeit: string | null;
+  einmalig?: boolean;
+  /** Schlummern: Erinnerung erst an diesem Tag (JJJJ-MM-TT). Die Prüffrist selbst bleibt. */
+  schlummernBis?: string | null;
 }
 
 export interface ErinnerungsEinstellungen {
@@ -25,7 +28,7 @@ export interface Erinnerung {
   titel: string;
   text: string;
   eintragId: string | null; // null = Sammelmeldung
-  art: 'vorwarnung' | 'faellig' | 'ueberfaellig';
+  art: 'vorwarnung' | 'faellig' | 'ueberfaellig' | 'schlummer';
 }
 
 /** Android erlaubt nur eine begrenzte Zahl geplanter Wecker pro App – wir planen die nächsten N. */
@@ -38,23 +41,32 @@ export function erinnerungsPlan(eintraege: PlanEintrag[], e: ErinnerungsEinstell
   const ueberfaellig: PlanEintrag[] = [];
 
   for (const x of eintraege) {
-    const f = berechneFaelligkeit(x.letzte, x.intervall, heuteIso, x.festerTermin);
-    if (!f.naechster) continue; // kein Termin -> keine Erinnerung
+    const f = berechneFaelligkeit({ letzte: x.letzte, intervall: x.intervall, festerTermin: x.festerTermin, einmalig: x.einmalig }, heuteIso);
+    if (!f.naechster) continue; // erledigt oder kein Termin -> keine Erinnerung
     const uhr = x.uhrzeit || e.uhrzeit;
     const kurz = x.aufgabe ? x.aufgabe.split('\n')[0].slice(0, 80) : 'Prüfung / Wartung';
 
+    // Geschlummert? Dann bis dahin Ruhe, und an dem Tag eine Erinnerung.
+    const schlummerZeit = x.schlummernBis ? zeitpunkt(x.schlummernBis, uhr) : null;
+    const schlummert = !!schlummerZeit && schlummerZeit > jetzt;
+    const erlaubt = (wann: Date) => wann > jetzt && (!schlummert || wann > schlummerZeit!);
+    if (schlummert) {
+      const wann = f.naechster < x.schlummernBis! ? 'war fällig am' : 'fällig am';
+      liste.push({ wann: schlummerZeit!, titel: `💤 Erinnerung: ${x.name}`, text: `${wann[0].toUpperCase()}${wann.slice(1)} ${formatDeutsch(f.naechster)} – ${kurz}`, eintragId: x.id, art: 'schlummer' });
+    }
+
     const faelligAm = zeitpunkt(f.naechster, uhr);
-    if (faelligAm > jetzt) {
+    if (erlaubt(faelligAm)) {
       liste.push({ wann: faelligAm, titel: `🔧 Heute fällig: ${x.name}`, text: kurz, eintragId: x.id, art: 'faellig' });
-    } else {
+    } else if (faelligAm <= jetzt && !schlummert) {
       ueberfaellig.push(x);
     }
 
     if (e.vorwarnTage > 0) {
       const vorwarnung = zeitpunkt(plusTage(f.naechster, -e.vorwarnTage), uhr);
-      if (vorwarnung > jetzt) {
+      if (erlaubt(vorwarnung)) {
         const t = e.vorwarnTage === 1 ? 'morgen' : `in ${e.vorwarnTage} Tagen`;
-        liste.push({ wann: vorwarnung, titel: `⏰ Bald fällig: ${x.name}`, text: `Fällig ${t} (${formatDeutsch(f.naechster)}) – ${kurz}`, eintragId: x.id, art: 'vorwarnung' });
+        liste.push({ wann: vorwarnung, titel: `⏰ Bald fällig: ${x.name}`, text: `Fällig ${t} (${formatMitTag(f.naechster)}) – ${kurz}`, eintragId: x.id, art: 'vorwarnung' });
       }
     }
   }

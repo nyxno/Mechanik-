@@ -3,18 +3,18 @@ import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungenLaden, durchfuehrungLoeschen, eintragFaelligkeit, eintragIntervall, eintragLaden, einstellungenLaden, fotosZuDurchfuehrungen, fotosZuEintrag } from '@/db/repo';
+import { durchfuehrungenLaden, durchfuehrungLoeschen, eintragFaelligkeit, eintragIntervall, eintragLaden, eintragSchlummern, einstellungenLaden, fotosZuDurchfuehrungen, fotosZuEintrag, mangelBehoben } from '@/db/repo';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import type { Durchfuehrung, EintragMitStatus, Foto } from '@/db/typen';
 import { intervallText } from '@/lib/intervall';
-import { formatDeutsch, heute } from '@/lib/datum';
+import { formatDeutsch, formatMitTag, heute, schlummerZiel } from '@/lib/datum';
 import { fotoDateiLoeschen } from '@/lib/fotos';
 import { Bildschirm } from '@/components/Bildschirm';
 import { FotoAnsicht } from '@/components/FotoAnsicht';
 import { FotoLeiste } from '@/components/FotoLeiste';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Taste } from '@/components/Taste';
-import { farben, groessen, statusFarben } from '@/theme';
+import { ergebnisFarben, farben, groessen, statusFarben } from '@/theme';
 
 export default function EintragDetail() {
   const db = useSQLiteContext();
@@ -37,6 +37,23 @@ export default function EintragDetail() {
   const f = eintragFaelligkeit(eintrag, heute());
   const uhr = eintrag.uhrzeit ?? standardUhrzeit;
   const sf = statusFarben(f.status);
+  const erledigt = f.status === 'erledigt';
+  const schlummert = !!eintrag.schlummern_bis && eintrag.schlummern_bis > heute();
+  const offeneMaengel = verlauf.filter((d) => d.ergebnis !== 'ok' && !d.mangel_behoben_am);
+
+  const schlummern = async () => {
+    const ziel = schlummerZiel(heute());
+    await eintragSchlummern(db, id, ziel);
+    await erinnerungenNeuPlanen(db);
+    laden();
+    Alert.alert('💤 Verschoben', `Erinnerung kommt wieder am ${formatMitTag(ziel)} um ${uhr} Uhr.\nDie Prüffrist bleibt ${f.naechster ? formatDeutsch(f.naechster) : 'unverändert'}.`);
+  };
+
+  const behoben = (d: Durchfuehrung) =>
+    Alert.alert('Mangel behoben?', d.notiz || 'Mangel als behoben markieren.', [
+      { text: 'Abbrechen', style: 'cancel' },
+      { text: '✓ Behoben', onPress: async () => { await mangelBehoben(db, d.id); laden(); } },
+    ]);
 
   const durchfuehrungEntfernen = (d: Durchfuehrung) =>
     Alert.alert('Durchführung löschen?', `Eintrag vom ${formatDeutsch(d.datum)} wird entfernt.`, [
@@ -61,16 +78,40 @@ export default function EintragDetail() {
         <Text style={[s.faellig, { color: sf.vorder }]}>{f.text}</Text>
         {f.naechster ? (
           <Text style={s.termin}>
-            📅 {formatDeutsch(f.naechster)}  🕒 {uhr} Uhr{eintrag.naechster_termin ? '  (fester Termin)' : ''}
+            📅 {formatMitTag(f.naechster)}  🕒 {uhr} Uhr{eintrag.naechster_termin && !eintrag.einmalig ? '  (fester Termin)' : ''}
           </Text>
         ) : null}
-        <Text style={s.klein}>Intervall: {intervallText(eintragIntervall(eintrag))}</Text>
+        {f.verschobenVon ? <Text style={s.klein}>Wochenende: vom {formatMitTag(f.verschobenVon)} verschoben</Text> : null}
+        {schlummert ? <Text style={s.termin}>💤 Erinnerung erst am {formatMitTag(eintrag.schlummern_bis!)}</Text> : null}
+        <Text style={s.klein}>{eintrag.einmalig ? '1× Einmaliger Termin' : `Intervall: ${intervallText(eintragIntervall(eintrag))}`}</Text>
       </View>
 
-      <Taste
-        titel="✓ Jetzt durchgeführt"
-        onPress={() => router.push({ pathname: '/eintrag/[id]/durchfuehrung', params: { id } })}
-      />
+      {offeneMaengel.map((d) => {
+        const ef = ergebnisFarben(d.ergebnis);
+        return (
+          <View key={d.id} style={[s.mangel, { backgroundColor: ef.hinter, borderColor: ef.vorder }]}>
+            <Text style={[s.mangelTitel, { color: ef.vorder }]}>{ef.symbol} {ef.label} seit {formatDeutsch(d.datum)}</Text>
+            {d.notiz ? <Text style={s.mangelText}>{d.notiz}</Text> : null}
+            <Taste titel="✓ Mangel behoben" onPress={() => behoben(d)} art="sekundaer" klein />
+          </View>
+        );
+      })}
+
+      {erledigt ? null : (
+        <>
+          <Taste
+            titel="✓ Jetzt durchgeführt"
+            onPress={() => router.push({ pathname: '/eintrag/[id]/durchfuehrung', params: { id } })}
+          />
+          {f.naechster ? (
+            <Taste
+              titel={schlummert ? '💤 Schlummern beenden' : '💤 Morgen erinnern'}
+              onPress={schlummert ? async () => { await eintragSchlummern(db, id, null); await erinnerungenNeuPlanen(db); laden(); } : schlummern}
+              art="sekundaer" klein style={{ marginTop: 10 }}
+            />
+          ) : null}
+        </>
+      )}
       <Taste titel="✎ Bearbeiten" onPress={() => router.push({ pathname: '/eintrag/[id]/bearbeiten', params: { id } })} art="sekundaer" klein style={{ marginTop: 10, marginBottom: 20 }} />
 
       {eintrag.aufgabe ? <Abschnitt titel="Was ist zu machen?" text={eintrag.aufgabe} /> : null}
@@ -88,7 +129,13 @@ export default function EintragDetail() {
               <Text style={s.verlaufDatum}>{formatDeutsch(d.datum)}</Text>
               {i === 0 ? <Text style={s.zuletzt}>zuletzt</Text> : null}
             </View>
+            <Text style={[s.ergebnisZeile, { color: ergebnisFarben(d.ergebnis).vorder }]}>
+              {ergebnisFarben(d.ergebnis).symbol} {ergebnisFarben(d.ergebnis).label}
+              {d.ergebnis !== 'ok' && d.mangel_behoben_am ? ` – behoben am ${formatDeutsch(d.mangel_behoben_am)}` : ''}
+            </Text>
+            {d.notiz ? <Text style={s.verlaufText}>Mangel: {d.notiz}</Text> : null}
             <Text style={s.verlaufText}>{d.beschreibung}</Text>
+            {d.pruefer ? <Text style={s.klein}>Geprüft von: {d.pruefer}</Text> : null}
             {df.length ? <FotoLeiste dateien={df.map((x) => x.datei)} onAnsehen={setAnsicht} /> : null}
           </Pressable>
         );
@@ -125,4 +172,8 @@ const s = StyleSheet.create({
   zuletzt: { color: farben.primaer, fontWeight: '700', fontSize: groessen.schriftKlein },
   verlaufText: { fontSize: groessen.schrift, color: farben.text, lineHeight: 26 },
   hinweis: { color: farben.grau, fontSize: groessen.schriftKlein, marginTop: 4 },
+  mangel: { borderWidth: 2, borderRadius: groessen.radius, padding: 14, marginBottom: 12, gap: 8 },
+  mangelTitel: { fontSize: groessen.schrift, fontWeight: '800' },
+  mangelText: { fontSize: groessen.schrift, color: farben.text },
+  ergebnisZeile: { fontSize: groessen.schriftKlein, fontWeight: '700', marginBottom: 2 },
 });

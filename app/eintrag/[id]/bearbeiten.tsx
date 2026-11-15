@@ -43,6 +43,7 @@ export default function EintragBearbeiten() {
         start={{
           kategorie_id: eintrag.kategorie_id, name: eintrag.name, aufgabe: eintrag.aufgabe, intervall: eintragIntervall(eintrag),
           zusatzinfo: eintrag.zusatzinfo, naechster_termin: eintrag.naechster_termin, uhrzeit: eintrag.uhrzeit,
+          einmalig: !!eintrag.einmalig,
         }}
         vorhandeneFotos={fotos.map((f) => f.datei)}
         onFotoLoeschen={async (datei) => {

@@ -46,7 +46,7 @@ export default function NeuerEintrag() {
         onSpeichern={async ({ daten, zuletztAm, neueFotos }) => {
           const id = await eintragAnlegen(db, daten);
           for (const f of neueFotos) await fotoSpeichern(db, { eintragId: id }, f);
-          if (zuletztAm) await durchfuehrungAnlegen(db, id, zuletztAm, 'Übernommen beim Anlegen des Eintrags', daten.naechster_termin);
+          if (zuletztAm) await durchfuehrungAnlegen(db, { eintragId: id, datum: zuletztAm, beschreibung: 'Übernommen beim Anlegen des Eintrags', naechsterTermin: daten.naechster_termin });
           erinnerungenNeuPlanen(db);
           router.replace({ pathname: '/eintrag/[id]', params: { id } });
         }}

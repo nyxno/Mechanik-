@@ -6,10 +6,12 @@ import { farben, groessen } from '@/theme';
 interface Props {
   wert: Intervall;
   onChange: (i: Intervall) => void;
+  einmalig: boolean;
+  onEinmaligChange: (e: boolean) => void;
 }
 
 /** Intervall wählen: Schnellauswahl oder Zahl + Einheit. */
-export function IntervallWahl({ wert, onChange }: Props) {
+export function IntervallWahl({ wert, onChange, einmalig, onEinmaligChange }: Props) {
   const istGleich = (a: Intervall, b: Intervall) => a.wert === b.wert && a.einheit === b.einheit;
   const [zahlText, setZahlText] = useState(String(wert.wert));
   useEffect(() => { if (parseInt(zahlText, 10) !== wert.wert) setZahlText(wert.wert ? String(wert.wert) : ''); }, [wert.wert]);
@@ -17,15 +19,22 @@ export function IntervallWahl({ wert, onChange }: Props) {
     <View style={s.block}>
       <Text style={s.label}>Intervall</Text>
       <View style={s.chips}>
+        <Pressable onPress={() => onEinmaligChange(true)} style={[s.chip, einmalig && s.chipAktiv]}>
+          <Text style={[s.chipText, einmalig && s.chipTextAktiv]}>1× Einmalig</Text>
+        </Pressable>
         {INTERVALL_VORLAGEN.map((v) => {
-          const aktiv = istGleich(v.intervall, wert);
+          const aktiv = !einmalig && istGleich(v.intervall, wert);
           return (
-            <Pressable key={v.label} onPress={() => onChange(v.intervall)} style={[s.chip, aktiv && s.chipAktiv]}>
+            <Pressable key={v.label} onPress={() => { onEinmaligChange(false); onChange(v.intervall); }} style={[s.chip, aktiv && s.chipAktiv]}>
               <Text style={[s.chipText, aktiv && s.chipTextAktiv]}>{v.label}</Text>
             </Pressable>
           );
         })}
       </View>
+      {einmalig ? (
+        <Text style={s.hinweis}>Wird nur einmal gemacht. Nach dem Erledigen wandert der Eintrag in „Erledigt“.</Text>
+      ) : null}
+      {einmalig ? null : <>
       <Text style={s.hinweis}>Oder frei eingeben:</Text>
       <View style={s.frei}>
         <Text style={s.alle}>alle</Text>
@@ -53,6 +62,7 @@ export function IntervallWahl({ wert, onChange }: Props) {
           })}
         </View>
       </View>
+      </>}
     </View>
   );
 }

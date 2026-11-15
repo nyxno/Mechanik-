@@ -4,10 +4,11 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import type { Kategorie } from '@/db/typen';
 import type { EintragDaten } from '@/db/repo';
 import { Intervall, intervallAddieren, istGueltigesIntervall } from '@/lib/intervall';
-import { formatDeutsch, heute } from '@/lib/datum';
+import { aufWerktag, formatDeutsch, formatMitTag, heute, wochentag } from '@/lib/datum';
 import { Eingabe } from './Eingabe';
 import { DatumFeld, UhrzeitFeld } from './DatumFeld';
 import { IntervallWahl } from './IntervallWahl';
+import { VorschlagEingabe } from './Vorschlaege';
 import { Taste } from './Taste';
 import { FotoLeiste } from './FotoLeiste';
 import { farben, groessen } from '@/theme';
@@ -44,28 +45,36 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
   const [zusatzinfo, setZusatzinfo] = useState(start?.zusatzinfo ?? '');
   const [naechster, setNaechster] = useState<string | null>(start?.naechster_termin ?? null);
   const [uhrzeit, setUhrzeit] = useState<string | null>(start?.uhrzeit ?? null);
+  const [einmalig, setEinmalig] = useState<boolean>(start?.einmalig ?? false);
   const [zuletzt, setZuletzt] = useState<string | null>(null);
   const [neueFotos, setNeueFotos] = useState<string[]>([]);
   const [laeuft, setLaeuft] = useState(false);
 
   // Was ohne festes Datum herauskäme (nur Anzeige)
   const basis = neu ? zuletzt : letzteDurchfuehrung;
-  const berechnet = basis && istGueltigesIntervall(intervall) ? intervallAddieren(basis, intervall) : null;
-  const terminHinweis = naechster
-    ? 'Fester Termin. Nach der nächsten Durchführung wird wieder mit dem Intervall gerechnet.'
-    : berechnet
-      ? `Leer = automatisch: ${formatDeutsch(berechnet)} (letzte Durchführung + Intervall)`
-      : 'Leer = wird nach der ersten Durchführung aus dem Intervall berechnet.';
+  const berechnet = !einmalig && basis && istGueltigesIntervall(intervall) ? aufWerktag(intervallAddieren(basis, intervall)) : null;
+  const terminHinweis = einmalig
+    ? 'Pflichtfeld bei „Einmalig“.'
+    : naechster
+      ? 'Fester Termin. Nach der nächsten Durchführung startet die neue Frist ab dem Erledigungsdatum.'
+      : berechnet
+        ? `Leer = automatisch: ${formatDeutsch(berechnet)} (letzte Durchführung + Intervall)`
+        : 'Leer = wird nach der ersten Durchführung aus dem Intervall berechnet.';
+  const wochenende = wochenendHinweis(naechster);
 
   const speichern = async () => {
     if (!name.trim()) return Alert.alert('Name fehlt', 'Bitte gib dem Eintrag einen Namen, z. B. „Therme Halle 2“.');
     if (!kategorieId) return Alert.alert('Kategorie fehlt', 'Bitte wähle eine Kategorie.');
-    if (!istGueltigesIntervall(intervall)) return Alert.alert('Intervall ungültig', 'Bitte gib eine Zahl ab 1 ein.');
+    if (!einmalig && !istGueltigesIntervall(intervall)) return Alert.alert('Intervall ungültig', 'Bitte gib eine Zahl ab 1 ein.');
+    if (einmalig && !naechster) return Alert.alert('Datum fehlt', 'Bei „Einmalig“ bitte eingeben, wann es fällig ist.');
     setLaeuft(true);
     try {
       await onSpeichern({
-        daten: { kategorie_id: kategorieId, name, aufgabe, intervall, zusatzinfo, naechster_termin: naechster, uhrzeit },
-        zuletztAm: zuletzt,
+        daten: {
+          kategorie_id: kategorieId, name, aufgabe, zusatzinfo, naechster_termin: naechster, uhrzeit, einmalig,
+          intervall: istGueltigesIntervall(intervall) ? intervall : { wert: 1, einheit: 'jahre' },
+        },
+        zuletztAm: einmalig ? null : zuletzt,
         neueFotos,
       });
     } finally {
@@ -93,10 +102,10 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
       </ScrollView>
 
       <Eingabe label="Name" value={name} onChangeText={setName} placeholder="z. B. Therme Halle 2" />
-      <Eingabe label="Was ist zu machen?" value={aufgabe} onChangeText={setAufgabe} placeholder="z. B. Sichtprüfung, Brenner reinigen, Abgasmessung" mehrzeilig />
-      <IntervallWahl wert={intervall} onChange={setIntervall} />
+      <VorschlagEingabe feld="aufgabe" label="Was ist zu machen?" value={aufgabe} onChangeText={setAufgabe} placeholder="z. B. Sichtprüfung, Brenner reinigen, Abgasmessung" mehrzeilig />
+      <IntervallWahl wert={intervall} onChange={setIntervall} einmalig={einmalig} onEinmaligChange={setEinmalig} />
 
-      {neu ? (
+      {neu && !einmalig ? (
         <DatumFeld
           label="Zuletzt gemacht am (optional)"
           wert={zuletzt}
@@ -106,11 +115,11 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
         />
       ) : null}
       <DatumFeld
-        label="Nächstes Mal fällig am"
+        label={einmalig ? 'Fällig am' : 'Nächstes Mal fällig am'}
         wert={naechster}
         onChange={setNaechster}
-        leerText={berechnet ? `Automatisch (${formatDeutsch(berechnet)})` : 'Automatisch berechnen'}
-        hinweis={terminHinweis}
+        leerText={einmalig ? 'Datum wählen' : berechnet ? `Automatisch (${formatDeutsch(berechnet)})` : 'Automatisch berechnen'}
+        hinweis={wochenende ? `${wochenende}\n${terminHinweis}` : terminHinweis}
       />
       <UhrzeitFeld
         label="Uhrzeit der Erinnerung"
@@ -146,3 +155,11 @@ const s = StyleSheet.create({
   chipAktiv: { backgroundColor: farben.primaer, borderColor: farben.primaer },
   chipText: { fontSize: groessen.schrift, fontWeight: '600', color: farben.text },
 });
+
+/** Hinweis, wenn ein Datum aufs Wochenende fällt (Sa -> Fr, So -> Mo). */
+export function wochenendHinweis(iso: string | null): string | null {
+  if (!iso) return null;
+  const t = wochentag(iso);
+  if (t !== 6 && t !== 0) return null;
+  return `⚠ Fällt auf ${t === 6 ? 'Samstag' : 'Sonntag'} – Termin wird ${formatMitTag(aufWerktag(iso))}.`;
+}

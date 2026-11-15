@@ -11,7 +11,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DB_NAME = 'wartungsapp.db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 /** Der lokale Standard-Betrieb, solange es keine Konten gibt. */
 export const LOKALER_BETRIEB_ID = 'lokal';
@@ -122,6 +122,41 @@ export async function migrieren(db: SQLiteDatabase): Promise<void> {
       INSERT OR IGNORE INTO einstellungen (schluessel, wert) VALUES ('vorwarnung_tage', '7');
     `);
     version = 2;
+  }
+
+  if (version === 2) {
+    // Version 3: Einmalig, Schlummern, Ergebnis/Mängel, Prüfer, lernende Vorschläge.
+    await db.execAsync(`
+      ALTER TABLE eintraege ADD COLUMN einmalig INTEGER NOT NULL DEFAULT 0;      -- 1 = nur einmal, danach "Erledigt"
+      ALTER TABLE eintraege ADD COLUMN schlummern_bis TEXT;                      -- Erinnerung erst ab diesem Tag
+      ALTER TABLE durchfuehrungen ADD COLUMN ergebnis TEXT NOT NULL DEFAULT 'ok'; -- ok | maengel | ausser_betrieb
+      ALTER TABLE durchfuehrungen ADD COLUMN notiz TEXT;                          -- kurze Mängel-Notiz
+      ALTER TABLE durchfuehrungen ADD COLUMN pruefer TEXT;                        -- Name des Prüfers
+      ALTER TABLE durchfuehrungen ADD COLUMN mangel_behoben_am TEXT;              -- wann der Mangel behoben wurde
+
+      CREATE TABLE IF NOT EXISTS vorschlaege (
+        feld        TEXT NOT NULL,              -- beschreibung | mangel | aufgabe | pruefer | suche
+        text        TEXT NOT NULL,
+        eintrag_id  TEXT NOT NULL DEFAULT '',   -- '' = allgemein, sonst nur für diesen Eintrag
+        anzahl      INTEGER NOT NULL DEFAULT 1,
+        zuletzt     TEXT NOT NULL,
+        PRIMARY KEY (feld, text, eintrag_id)
+      );
+
+      -- Bisherige Beschreibungen gleich als Vorschläge übernehmen
+      INSERT OR IGNORE INTO vorschlaege (feld, text, eintrag_id, anzahl, zuletzt)
+        SELECT 'beschreibung', beschreibung, '', COUNT(*), MAX(created_at) FROM durchfuehrungen
+         WHERE deleted_at IS NULL AND beschreibung NOT IN ('', 'Durchgeführt', 'Übernommen beim Anlegen des Eintrags')
+         GROUP BY beschreibung;
+      INSERT OR IGNORE INTO vorschlaege (feld, text, eintrag_id, anzahl, zuletzt)
+        SELECT 'beschreibung', beschreibung, eintrag_id, COUNT(*), MAX(created_at) FROM durchfuehrungen
+         WHERE deleted_at IS NULL AND beschreibung NOT IN ('', 'Durchgeführt', 'Übernommen beim Anlegen des Eintrags')
+         GROUP BY beschreibung, eintrag_id;
+      INSERT OR IGNORE INTO vorschlaege (feld, text, eintrag_id, anzahl, zuletzt)
+        SELECT 'aufgabe', aufgabe, '', COUNT(*), MAX(created_at) FROM eintraege
+         WHERE deleted_at IS NULL AND aufgabe <> '' GROUP BY aufgabe;
+    `);
+    version = 3;
   }
 
   // Spätere Änderungen am Datenbank-Aufbau kommen hier als weitere "if (version === N)"-Blöcke.

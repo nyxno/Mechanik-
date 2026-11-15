@@ -76,3 +76,36 @@ export function tageZwischen(a: IsoDatum, b: IsoDatum): number {
 export function jetztIso(): string {
   return new Date().toISOString();
 }
+
+export const WOCHENTAGE_KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+/** 0 = Sonntag … 6 = Samstag */
+export function wochentag(iso: IsoDatum): number {
+  return zuDate(iso).getDay();
+}
+
+/** "Mo, 17.11.2026" */
+export function formatMitTag(iso: IsoDatum): string {
+  return `${WOCHENTAGE_KURZ[wochentag(iso)]}, ${formatDeutsch(iso)}`;
+}
+
+/** Wochenend-Regel: Samstag -> Freitag davor, Sonntag -> Montag danach. Werktage bleiben. */
+export function aufWerktag(iso: IsoDatum): IsoDatum {
+  const t = wochentag(iso);
+  if (t === 6) return plusTage(iso, -1);
+  if (t === 0) return plusTage(iso, 1);
+  return iso;
+}
+
+/** Schlummern: nächster Tag; fällt der auf Samstag oder Sonntag, dann Montag. */
+export function schlummerZiel(heuteIso: IsoDatum): IsoDatum {
+  let d = plusTage(heuteIso, 1);
+  while (wochentag(d) === 6 || wochentag(d) === 0) d = plusTage(d, 1);
+  return d;
+}
+
+/** Montag der Woche, in der das Datum liegt. */
+export function montagDerWoche(iso: IsoDatum): IsoDatum {
+  const t = wochentag(iso);
+  return plusTage(iso, t === 0 ? -6 : 1 - t);
+}

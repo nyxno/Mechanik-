@@ -1,15 +1,17 @@
-# Offene Wünsche (noch nicht umgesetzt)
+# Wünsche
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-## 1. Reihenfolge der Kategorien ändern
+**Stand:** Punkte 1–9 sind in **Version 0.3** umgesetzt (✅).
+
+## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
   damit man selbst bestimmt, welche wo steht.
 - Gilt für die Kategorie-Leiste auf der Startseite und für die Kategorien-Seite.
 - Technisch vorbereitet: Spalte `kategorien.sortierung` gibt es schon.
 - Bedienung: große Tasten ▲ / ▼ (handschuhtauglich) statt nur Ziehen mit dem Finger.
 
-## 2. Intervall „Einmalig“ + Ordner „Erledigt“
+## ✅ 2. Intervall „Einmalig“ + Ordner „Erledigt“
 - Zusätzlich zu „alle X Tage/Wochen/Monate/Jahre“ eine Auswahl **„Einmalig“**.
 - Ein einmaliger Eintrag braucht ein Fälligkeitsdatum und wiederholt sich nicht.
 - **Nach der Durchführung** wandert der Eintrag in einen Bereich **„Erledigt“**
@@ -17,18 +19,18 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
   Verlauf und Fotos bleiben sichtbar.
 - Erledigte Einträge erscheinen nicht mehr in der normalen Übersicht.
 
-## 3. Wochenende vermeiden
+## ✅ 3. Wochenende vermeiden
 - Fällt ein Termin auf **Samstag oder Sonntag**, wird er automatisch auf einen Werktag verschoben.
 - **Entschieden:** Samstag → Freitag davor, Sonntag → Montag danach.
 - Gilt für berechnete Termine; Erinnerung kommt dann am verschobenen Tag.
 - Später denkbar: Feiertage ebenfalls berücksichtigen.
 
-## 4. Liste „Diese Woche / Nächste Woche“
+## ✅ 4. Liste „Diese Woche / Nächste Woche“
 - Eigene Ansicht: was steht **diese Woche** an, was **nächste Woche** (Montag bis Sonntag).
 - Überfälliges oben dabei, damit nichts untergeht.
 - Erreichbar von der Startseite mit einer großen Taste.
 
-## 5. Schlummer-Taste („Snooze“)
+## ✅ 5. Schlummer-Taste („Snooze“)
 - Einen Termin mit einer Taste **auf den nächsten Tag verschieben**.
 - Sowohl direkt in der Benachrichtigung („Morgen erinnern“) als auch in der App beim Eintrag.
 - **Entschieden:** Nur die Erinnerung wird verschoben. Die echte Prüffrist bleibt sichtbar
@@ -39,24 +41,24 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Fällt der nächste Tag aufs Wochenende → Samstag auf Freitag geht beim Schlummern nicht (wäre heute),
   daher beim Schlummern Wochenende immer auf Montag.
 
-## 6. Ergebnis bei jeder Durchführung
+## ✅ 6. Ergebnis bei jeder Durchführung
 - Drei große Tasten: **In Ordnung** (grün) · **Mängel** (gelb/rot) · **Außer Betrieb** (rot).
 - Bei „Mängel“ oder „Außer Betrieb“: Feld für eine **kurze Notiz** (optional, nur wenn nötig).
 - Offene Mängel bleiben am Eintrag sichtbar, bis sie als behoben markiert werden.
 - Ergebnis erscheint im Verlauf und später im PDF-Prüfnachweis.
 
-## 7. Schnell abhaken
+## ✅ 7. Schnell abhaken
 - In der Übersicht pro Eintrag eine Taste **„✓ Heute erledigt“**, ohne den Eintrag zu öffnen.
 - Speichert Durchführung mit heutigem Datum und Ergebnis „In Ordnung“.
 - Kurze Rückfrage oder „Rückgängig“-Taste gegen versehentliches Tippen.
 
-## 8. Name des Prüfers
+## ✅ 8. Name des Prüfers
 - Bei jeder Durchführung wird gespeichert, **wer** geprüft hat.
 - Name einmal in den Einstellungen eintragen, wird automatisch vorausgefüllt, änderbar.
 - **Keine Unterschrift.**
 - Später mit Benutzerkonten: Name kommt automatisch aus dem Konto (`durchfuehrungen.benutzer_id` ist vorbereitet).
 
-## 9. Lernende Vorschläge
+## ✅ 9. Lernende Vorschläge
 - Die App merkt sich, was oft geschrieben und gesucht wird, und **schlägt es beim Tippen vor**
   (große Vorschlags-Tasten über der Tastatur, antippen = übernehmen).
 - Gilt für: Beschreibung der Durchführung, Mängel-Notiz, Aufgabe, Suche in der Übersicht.

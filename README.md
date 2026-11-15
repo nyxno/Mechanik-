@@ -5,7 +5,7 @@ Thermen, Heizungen, Leitern, Feuerlöscher, Anschlagmittel, Druckbehälter, Masc
 
 Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 
-## Was die App kann (Version 0.2)
+## Was die App kann (Version 0.3)
 
 - **Kategorien** anlegen, umbenennen, löschen (z. B. Heizung, Brandschutz, Leitern)
 - **Einträge** je Kategorie: Name, Aufgabe, Intervall (frei wählbar), Zusatzinfo, Fotos
@@ -16,6 +16,17 @@ Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 - **Erinnerungen** aufs Handy mit eigenem Signalton: Vorwarnung (z. B. 1 Woche vorher) und am Tag
   der Fälligkeit, zur gewählten **Uhrzeit** (pro Eintrag oder Standard). Überfälliges wird täglich gemeldet.
   Einstellungen über „🔔 Erinnerungen“ oben rechts.
+
+- **Einmalige Termine** – nach dem Erledigen im Ordner **„Erledigt“**
+- **Wochenende**: Termine am Samstag → Freitag, am Sonntag → Montag
+- **Diese & nächste Woche**: Liste, was ansteht
+- **Schlummern** („Morgen erinnern“) in der App und in der Benachrichtigung – die echte Prüffrist bleibt
+- **Ergebnis** jeder Durchführung (In Ordnung / Mängel / Außer Betrieb) mit kurzer Mängel-Notiz;
+  offene Mängel bleiben sichtbar bis „behoben“
+- **Schnell abhaken** direkt in der Übersicht, mit Rückgängig
+- **Name des Prüfers** bei jeder Durchführung
+- **Kategorien sortieren** mit ▲ ▼
+- **Lernende Vorschläge** beim Schreiben und Suchen (nur am Handy, ohne Internet)
 
 Noch nicht enthalten: Benutzerkonten, Abgleich zwischen Geräten, PDF-Export.
 Die Datenstruktur ist dafür aber schon vorbereitet (siehe `docs/ARCHITEKTUR.md`).

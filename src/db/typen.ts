@@ -22,6 +22,10 @@ export interface Eintrag {
   naechster_termin: IsoDatum | null;
   /** Uhrzeit "HH:MM" für die Erinnerung, null = Standard aus den Einstellungen. */
   uhrzeit: string | null;
+  /** 1 = einmaliger Termin; nach der Durchführung "Erledigt". */
+  einmalig: number;
+  /** Schlummern: Erinnerung erst an diesem Tag. Die Prüffrist selbst bleibt. */
+  schlummern_bis: IsoDatum | null;
   created_at: string;
   updated_at: string;
 }
@@ -30,7 +34,11 @@ export interface Eintrag {
 export interface EintragMitStatus extends Eintrag {
   kategorie_name: string;
   letzte_durchfuehrung: IsoDatum | null;
+  /** Anzahl offener (nicht behobener) Mängel. */
+  offene_maengel: number;
 }
+
+export type Ergebnis = 'ok' | 'maengel' | 'ausser_betrieb';
 
 export interface Durchfuehrung {
   id: string;
@@ -39,6 +47,10 @@ export interface Durchfuehrung {
   datum: IsoDatum;
   beschreibung: string;
   benutzer_id: string | null;
+  ergebnis: Ergebnis;
+  notiz: string | null;
+  pruefer: string | null;
+  mangel_behoben_am: IsoDatum | null;
   created_at: string;
 }
 

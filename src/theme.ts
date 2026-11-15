@@ -31,6 +31,15 @@ export const groessen = {
 };
 
 import type { Status } from './lib/faelligkeit';
+import type { Ergebnis } from './db/typen';
+
+export function ergebnisFarben(e: Ergebnis): { hinter: string; vorder: string; label: string; symbol: string } {
+  switch (e) {
+    case 'ok': return { hinter: farben.gruenHell, vorder: farben.gruen, label: 'In Ordnung', symbol: '✓' };
+    case 'maengel': return { hinter: farben.gelbHell, vorder: farben.gelb, label: 'Mängel', symbol: '⚠' };
+    case 'ausser_betrieb': return { hinter: farben.rotHell, vorder: farben.rot, label: 'Außer Betrieb', symbol: '⛔' };
+  }
+}
 
 export function statusFarben(status: Status): { hinter: string; vorder: string; label: string } {
   switch (status) {
@@ -38,5 +47,6 @@ export function statusFarben(status: Status): { hinter: string; vorder: string; 
     case 'nie': return { hinter: farben.rotHell, vorder: farben.rot, label: 'Noch nie' };
     case 'bald': return { hinter: farben.gelbHell, vorder: farben.gelb, label: 'Bald fällig' };
     case 'ok': return { hinter: farben.gruenHell, vorder: farben.gruen, label: 'In Ordnung' };
+    case 'erledigt': return { hinter: farben.gruenHell, vorder: farben.gruen, label: 'Erledigt' };
   }
 }
