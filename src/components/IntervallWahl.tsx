@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { EINHEITEN, INTERVALL_VORLAGEN, Intervall, IntervallEinheit } from '@/lib/intervall';
 import { farben, groessen } from '@/theme';
@@ -10,6 +11,8 @@ interface Props {
 /** Intervall wählen: Schnellauswahl oder Zahl + Einheit. */
 export function IntervallWahl({ wert, onChange }: Props) {
   const istGleich = (a: Intervall, b: Intervall) => a.wert === b.wert && a.einheit === b.einheit;
+  const [zahlText, setZahlText] = useState(String(wert.wert));
+  useEffect(() => { if (parseInt(zahlText, 10) !== wert.wert) setZahlText(wert.wert ? String(wert.wert) : ''); }, [wert.wert]);
   return (
     <View style={s.block}>
       <Text style={s.label}>Intervall</Text>
@@ -27,11 +30,14 @@ export function IntervallWahl({ wert, onChange }: Props) {
       <View style={s.frei}>
         <Text style={s.alle}>alle</Text>
         <TextInput
-          value={String(wert.wert)}
+          value={zahlText}
           onChangeText={(t) => {
-            const n = parseInt(t.replace(/\D/g, ''), 10);
+            const nurZiffern = t.replace(/\D/g, '');
+            setZahlText(nurZiffern);
+            const n = parseInt(nurZiffern, 10);
             onChange({ ...wert, wert: isNaN(n) ? 0 : n });
           }}
+          placeholder="Zahl"
           keyboardType="number-pad"
           style={s.zahl}
           selectTextOnFocus

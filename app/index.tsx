@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { eintraegeLaden, eintragIntervall, kategorienLaden } from '@/db/repo';
 import type { EintragMitStatus, Kategorie } from '@/db/typen';
 import { berechneFaelligkeit, sortierWert, Status } from '@/lib/faelligkeit';
@@ -13,6 +14,7 @@ import { farben, groessen } from '@/theme';
 
 export default function Uebersicht() {
   const db = useSQLiteContext();
+  const insets = useSafeAreaInsets();
   const [eintraege, setEintraege] = useState<EintragMitStatus[]>([]);
   const [kategorien, setKategorien] = useState<Kategorie[]>([]);
   const [filterKategorie, setFilterKategorie] = useState<string | null>(null);
@@ -86,7 +88,7 @@ export default function Uebersicht() {
         }
       />
 
-      <View style={s.fuss}>
+      <View style={[s.fuss, { paddingBottom: groessen.abstand + insets.bottom }]}>
         <Taste
           titel="＋ Neuer Eintrag"
           onPress={() => router.push({ pathname: '/eintrag/neu', params: filterKategorie ? { kategorieId: filterKategorie } : {} })}
@@ -126,7 +128,7 @@ const s = StyleSheet.create({
   chipAktiv: { backgroundColor: farben.primaer, borderColor: farben.primaer },
   chipKategorien: { borderStyle: 'dashed' },
   chipText: { fontSize: groessen.schriftKlein, fontWeight: '600', color: farben.text },
-  liste: { paddingHorizontal: groessen.abstand, paddingBottom: 110 },
+  liste: { paddingHorizontal: groessen.abstand, paddingBottom: 140 },
   leer: { padding: 32, alignItems: 'center' },
   leerText: { fontSize: groessen.schrift, color: farben.textLeicht, textAlign: 'center', lineHeight: 28 },
   fuss: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: groessen.abstand, backgroundColor: farben.hintergrund },
