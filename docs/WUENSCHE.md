@@ -38,3 +38,29 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
   ist damit hinfällig.
 - Fällt der nächste Tag aufs Wochenende → Samstag auf Freitag geht beim Schlummern nicht (wäre heute),
   daher beim Schlummern Wochenende immer auf Montag.
+
+## 6. Ergebnis bei jeder Durchführung
+- Drei große Tasten: **In Ordnung** (grün) · **Mängel** (gelb/rot) · **Außer Betrieb** (rot).
+- Bei „Mängel“ oder „Außer Betrieb“: Feld für eine **kurze Notiz** (optional, nur wenn nötig).
+- Offene Mängel bleiben am Eintrag sichtbar, bis sie als behoben markiert werden.
+- Ergebnis erscheint im Verlauf und später im PDF-Prüfnachweis.
+
+## 7. Schnell abhaken
+- In der Übersicht pro Eintrag eine Taste **„✓ Heute erledigt“**, ohne den Eintrag zu öffnen.
+- Speichert Durchführung mit heutigem Datum und Ergebnis „In Ordnung“.
+- Kurze Rückfrage oder „Rückgängig“-Taste gegen versehentliches Tippen.
+
+## 8. Name des Prüfers
+- Bei jeder Durchführung wird gespeichert, **wer** geprüft hat.
+- Name einmal in den Einstellungen eintragen, wird automatisch vorausgefüllt, änderbar.
+- **Keine Unterschrift.**
+- Später mit Benutzerkonten: Name kommt automatisch aus dem Konto (`durchfuehrungen.benutzer_id` ist vorbereitet).
+
+## 9. Lernende Vorschläge
+- Die App merkt sich, was oft geschrieben und gesucht wird, und **schlägt es beim Tippen vor**
+  (große Vorschlags-Tasten über der Tastatur, antippen = übernehmen).
+- Gilt für: Beschreibung der Durchführung, Mängel-Notiz, Aufgabe, Suche in der Übersicht.
+- Vorschläge passend zum Eintrag zuerst (was bei genau diesem Gerät früher geschrieben wurde),
+  danach die häufigsten allgemein.
+- Läuft komplett **am Handy, ohne Internet und ohne KI-Dienst** → keine Daten an Dritte (DSGVO).
+- Einzelne Vorschläge löschbar (lange drücken).
