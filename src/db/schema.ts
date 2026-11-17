@@ -9,9 +9,10 @@
 //    damit das Löschen beim Abgleich auch auf andere Geräte übertragen werden kann.
 //  - synced_at: wann die Zeile zuletzt zum Server übertragen wurde (noch unbenutzt).
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { GEBIETSFARBEN } from '@/lib/farben';
 
 export const DB_NAME = 'wartungsapp.db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 /** Der lokale Standard-Betrieb, solange es keine Konten gibt. */
 export const LOKALER_BETRIEB_ID = 'lokal';
@@ -157,6 +158,16 @@ export async function migrieren(db: SQLiteDatabase): Promise<void> {
          WHERE deleted_at IS NULL AND aufgabe <> '' GROUP BY aufgabe;
     `);
     version = 3;
+  }
+
+  if (version === 3) {
+    // Version 4: jede Kategorie (Gebiet) bekommt eine Farbe.
+    await db.execAsync('ALTER TABLE kategorien ADD COLUMN farbe TEXT;');
+    const kat = await db.getAllAsync<{ id: string }>('SELECT id FROM kategorien ORDER BY deleted_at IS NOT NULL, sortierung, name');
+    for (let i = 0; i < kat.length; i++) {
+      await db.runAsync('UPDATE kategorien SET farbe = ? WHERE id = ?', GEBIETSFARBEN[i % GEBIETSFARBEN.length], kat[i].id);
+    }
+    version = 4;
   }
 
   // Spätere Änderungen am Datenbank-Aufbau kommen hier als weitere "if (version === N)"-Blöcke.

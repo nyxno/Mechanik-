@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 sind in **Version 0.3** umgesetzt (✅). Punkte 10–13 sind offen.
+**Stand:** Punkte 1–9 in Version 0.3, Punkte 10–13 in **Version 0.4** umgesetzt (✅). Nichts offen.
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -67,29 +67,28 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Läuft komplett **am Handy, ohne Internet und ohne KI-Dienst** → keine Daten an Dritte (DSGVO).
 - Einzelne Vorschläge löschbar (lange drücken).
 
-## 10. Übersicht „Alle“ nur die nächsten 3 Monate
+## ✅ 10. Übersicht „Alle“ nur die nächsten 3 Monate
 - Unter „Alle“ erscheinen nur Arbeiten, die in den **nächsten 3 Monaten** fällig werden.
 - Überfälliges und „noch nie gemacht“ bleiben immer sichtbar.
 - Vorschlag: Unten eine Taste „Später fällig (n) anzeigen“, damit nichts verloren wirkt.
-- Offen: Gilt die Grenze auch beim Filtern nach einer Kategorie und bei der Suche?
-  Vorschlag: nein, dort alles zeigen.
+- **Entschieden:** Beim Filtern nach Kategorie und bei der Suche wird alles gezeigt.
 
-## 11. Kalender (Monatsansicht)
+## ✅ 11. Kalender (Monatsansicht)
 - Monatskalender, in dem man auf einen Blick sieht, was wann eingeplant ist.
 - An jedem Tag farbige Punkte bzw. Balken in der Farbe des Gebiets (siehe Punkt 12).
 - Tag antippen → Liste der Arbeiten an diesem Tag. Mit ◀ ▶ Monate wechseln.
 - Überfällige Tage rot markiert, heute hervorgehoben.
 
-## 12. Farben für Gebiete
+## ✅ 12. Farben für Gebiete
 - Jedes Gebiet (Kategorie) bekommt eine eigene Farbe, z. B. Heizung rot, Brandschutz orange.
 - Farbe sichtbar in Übersicht, Kalender, Wochenliste und Kategorie-Leiste.
 - Farbe selbst wählbar (große Farbfelder), neue Kategorien bekommen automatisch eine freie Farbe.
 
-## 13. Muster erkennen / automatisch zuordnen
+## ✅ 13. Muster erkennen / automatisch zuordnen
 - Beim Anlegen eines Eintrags schlägt die App **Gebiet (Kategorie)** und **Intervall** vor,
   anhand ähnlicher Namen, z. B. „Therme Keller“ → Heizung, jährlich, weil „Therme Halle 2“ so eingetragen ist.
 - Läuft nur am Handy, ohne Internet und ohne KI-Dienst, lernt aus den eigenen Einträgen.
-- Offen: Was soll die App sonst noch an Mustern erkennen? Ideen:
+- **Entschieden: alles umsetzen:**
   - wiederkehrende Mängel am selben Gerät („3× Dichtung undicht in einem Jahr“),
   - Arbeiten am selben Standort zusammenlegen („2 Termine im gleichen Gebäude diese Woche“),
   - übliche Wochentage/Uhrzeiten, an denen du prüfst, als Standard vorschlagen.

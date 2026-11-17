@@ -3,7 +3,8 @@ import { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { kategorieAnlegen, kategorieLoeschen, kategorienLaden, kategorieUmbenennen, kategorieVerschieben } from '@/db/repo';
+import { kategorieAnlegen, kategorieFarbeSetzen, kategorieLoeschen, kategorienLaden, kategorieUmbenennen, kategorieVerschieben } from '@/db/repo';
+import { GEBIETSFARBEN } from '@/lib/farben';
 import type { Kategorie } from '@/db/typen';
 import { Eingabe } from '@/components/Eingabe';
 import { Taste } from '@/components/Taste';
@@ -55,7 +56,7 @@ export default function Kategorien() {
           <View style={s.neu}>
             <Eingabe label="Neue Kategorie" value={neu} onChangeText={setNeu} placeholder="z. B. Elektrik" onSubmitEditing={anlegen} returnKeyType="done" />
             <Taste titel="＋ Hinzufügen" onPress={anlegen} deaktiviert={!neu.trim()} klein />
-            <Text style={s.hinweis}>Tippe auf den Namen, um umzubenennen oder zu löschen. Mit ▲ ▼ änderst du die Reihenfolge.</Text>
+            <Text style={s.hinweis}>Tippe auf den Namen, um Name oder Farbe zu ändern oder zu löschen. Mit ▲ ▼ änderst du die Reihenfolge.</Text>
           </View>
         }
         renderItem={({ item, index }) =>
@@ -66,10 +67,20 @@ export default function Kategorien() {
                 <Taste titel="Speichern" onPress={speichern} klein style={{ flex: 1 }} deaktiviert={!name.trim()} />
                 <Taste titel="Abbrechen" onPress={() => setBearbeite(null)} art="sekundaer" klein style={{ flex: 1 }} />
               </View>
+ <Text style={s.farbLabel}>Farbe</Text>
+              <View style={s.farben}>
+                {GEBIETSFARBEN.map((f) => (
+                  <Pressable key={f} onPress={async () => { await kategorieFarbeSetzen(db, item.id, f); laden(); }}
+                    style={[s.farbe, { backgroundColor: f }, item.farbe === f && s.farbeAktiv]}>
+                    {item.farbe === f ? <Text style={s.haken}>✓</Text> : null}
+                  </Pressable>
+                ))}
+              </View>
               <Taste titel="🗑 Kategorie löschen" onPress={() => loeschen(item)} art="gefahr" klein style={{ marginTop: 10 }} />
             </View>
           ) : (
             <View style={[s.karte, s.zeile]}>
+              <View style={[s.punkt, { backgroundColor: item.farbe ?? farben.grau }]} />
               <Pressable onPress={() => { setBearbeite(item); setName(item.name); }} style={({ pressed }) => [s.namensFeld, pressed && { opacity: 0.6 }]}>
                 <Text style={s.name}>{item.name}</Text>
                 <Text style={s.anzahl}>{item.anzahl ?? 0} Eintr{item.anzahl === 1 ? 'ag' : 'äge'}</Text>
@@ -95,6 +106,12 @@ function Pfeil({ text, aus, onPress }: { text: string; aus: boolean; onPress: ()
 }
 
 const s = StyleSheet.create({
+  punkt: { width: 22, height: 22, borderRadius: 11, marginRight: 12 },
+  farbLabel: { fontSize: groessen.schrift, fontWeight: '600', color: farben.text, marginTop: 14, marginBottom: 8 },
+  farben: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  farbe: { width: 52, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  farbeAktiv: { borderWidth: 4, borderColor: farben.text },
+  haken: { color: '#fff', fontSize: 24, fontWeight: '900' },
   namensFeld: { flex: 1, minHeight: groessen.tasteHoehe, justifyContent: 'center' },
   pfeil: { width: 56, height: 56, borderRadius: 12, backgroundColor: farben.grauHell, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
   pfeilText: { fontSize: 24, fontWeight: '800', color: farben.text },

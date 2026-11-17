@@ -6,6 +6,8 @@ export interface Kategorie {
   betrieb_id: string;
   name: string;
   sortierung: number;
+  /** Farbe des Gebiets, z. B. "#EA580C". */
+  farbe: string | null;
   anzahl?: number; // Anzahl Einträge (nur in Listen)
 }
 
@@ -33,6 +35,7 @@ export interface Eintrag {
 /** Eintrag inkl. Daten für die Übersicht. */
 export interface EintragMitStatus extends Eintrag {
   kategorie_name: string;
+  kategorie_farbe: string | null;
   letzte_durchfuehrung: IsoDatum | null;
   /** Anzahl offener (nicht behobener) Mängel. */
   offene_maengel: number;

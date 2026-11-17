@@ -33,7 +33,10 @@ export function EintragKarte({ eintrag, zeigeKategorie = true, onSchnellErledigt
         <Text style={s.name} numberOfLines={2}>{eintrag.name}</Text>
         <StatusBadge status={f.status} />
       </View>
-      <Text style={s.klein}>{zeigeKategorie ? `${eintrag.kategorie_name} · ${art}` : art}</Text>
+      <View style={s.zeile}>
+        {zeigeKategorie ? <GebietMarke name={eintrag.kategorie_name} farbe={eintrag.kategorie_farbe} /> : null}
+        <Text style={[s.klein, { marginTop: 0 }]}>{art}</Text>
+      </View>
       <Text style={[s.faellig, { color: sf.vorder }]}>{f.text}</Text>
       {f.status !== 'erledigt' && eintrag.letzte_durchfuehrung ? (
         <Text style={s.klein}>Zuletzt: {formatDeutsch(eintrag.letzte_durchfuehrung)}</Text>
@@ -63,7 +66,19 @@ export function EintragKarte({ eintrag, zeigeKategorie = true, onSchnellErledigt
   );
 }
 
+/** Kleines farbiges Schild mit dem Gebiet (Kategorie). */
+export function GebietMarke({ name, farbe }: { name: string; farbe: string | null }) {
+  return (
+    <View style={[s.marke, { backgroundColor: farbe ?? farben.grau }]}>
+      <Text style={s.markeText} numberOfLines={1}>{name}</Text>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
+  zeile: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' },
+  marke: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, maxWidth: 200 },
+  markeText: { color: '#fff', fontSize: 13, fontWeight: '800' },
   karte: {
     backgroundColor: farben.karte,
     borderRadius: groessen.radius,

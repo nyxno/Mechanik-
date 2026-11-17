@@ -5,7 +5,7 @@ Thermen, Heizungen, Leitern, Feuerlöscher, Anschlagmittel, Druckbehälter, Masc
 
 Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 
-## Was die App kann (Version 0.3)
+## Was die App kann (Version 0.4)
 
 - **Kategorien** anlegen, umbenennen, löschen (z. B. Heizung, Brandschutz, Leitern)
 - **Einträge** je Kategorie: Name, Aufgabe, Intervall (frei wählbar), Zusatzinfo, Fotos
@@ -27,6 +27,11 @@ Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 - **Name des Prüfers** bei jeder Durchführung
 - **Kategorien sortieren** mit ▲ ▼
 - **Lernende Vorschläge** beim Schreiben und Suchen (nur am Handy, ohne Internet)
+- **Startseite „Alle“** zeigt nur, was in den nächsten 3 Monaten fällig wird (Rest per Taste)
+- **Kalender** (Monatsansicht) mit farbigen Punkten je Gebiet
+- **Gebietsfarben** – jede Kategorie hat eine eigene, wählbare Farbe
+- **Muster erkennen**: Gebiet/Intervall beim Anlegen automatisch zuordnen, wiederkehrende Mängel,
+  Arbeiten am selben Standort bündeln, übliche Arbeitszeit für Erinnerungen
 
 Noch nicht enthalten: Benutzerkonten, Abgleich zwischen Geräten, PDF-Export.
 Die Datenstruktur ist dafür aber schon vorbereitet (siehe `docs/ARCHITEKTUR.md`).

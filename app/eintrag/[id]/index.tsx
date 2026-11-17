@@ -7,6 +7,8 @@ import { durchfuehrungenLaden, durchfuehrungLoeschen, eintragFaelligkeit, eintra
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import type { Durchfuehrung, EintragMitStatus, Foto } from '@/db/typen';
 import { intervallText } from '@/lib/intervall';
+import { wiederkehrendeMaengel } from '@/lib/muster';
+import { GebietMarke } from '@/components/EintragKarte';
 import { formatDeutsch, formatMitTag, heute, schlummerZiel } from '@/lib/datum';
 import { fotoDateiLoeschen } from '@/lib/fotos';
 import { Bildschirm } from '@/components/Bildschirm';
@@ -40,6 +42,9 @@ export default function EintragDetail() {
   const erledigt = f.status === 'erledigt';
   const schlummert = !!eintrag.schlummern_bis && eintrag.schlummern_bis > heute();
   const offeneMaengel = verlauf.filter((d) => d.ergebnis !== 'ok' && !d.mangel_behoben_am);
+  const muster = wiederkehrendeMaengel(
+    verlauf.filter((d) => d.ergebnis !== 'ok').map((d) => ({ eintragId: id, datum: d.datum, notiz: d.notiz })), heute(),
+  )[0];
 
   const schlummern = async () => {
     const ziel = schlummerZiel(heute());
@@ -74,7 +79,10 @@ export default function EintragDetail() {
       <Stack.Screen options={{ title: eintrag.kategorie_name }} />
       <View style={[s.status, { backgroundColor: sf.hinter, borderColor: sf.vorder }]}>
         <Text style={s.name}>{eintrag.name}</Text>
-        <StatusBadge status={f.status} />
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <StatusBadge status={f.status} />
+          <GebietMarke name={eintrag.kategorie_name} farbe={eintrag.kategorie_farbe} />
+        </View>
         <Text style={[s.faellig, { color: sf.vorder }]}>{f.text}</Text>
         {f.naechster ? (
           <Text style={s.termin}>
@@ -85,6 +93,15 @@ export default function EintragDetail() {
         {schlummert ? <Text style={s.termin}>💤 Erinnerung erst am {formatMitTag(eintrag.schlummern_bis!)}</Text> : null}
         <Text style={s.klein}>{eintrag.einmalig ? '1× Einmaliger Termin' : `Intervall: ${intervallText(eintragIntervall(eintrag))}`}</Text>
       </View>
+
+      {muster ? (
+        <View style={[s.mangel, { backgroundColor: farben.gelbHell, borderColor: farben.gelb }]}>
+          <Text style={[s.mangelTitel, { color: farben.gelb }]}>💡 Wiederkehrender Mangel: {muster.anzahl}× in 12 Monaten</Text>
+          <Text style={s.mangelText}>
+            {muster.haeufigste ? `${muster.haeufigsteAnzahl}× „${muster.haeufigste}“. ` : ''}Ursache prüfen, Teil tauschen oder Intervall verkürzen?
+          </Text>
+        </View>
+      ) : null}
 
       {offeneMaengel.map((d) => {
         const ef = ergebnisFarben(d.ergebnis);

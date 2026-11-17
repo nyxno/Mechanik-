@@ -5,13 +5,13 @@ import { Link, router, Stack, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  durchfuehrungAnlegen, durchfuehrungRueckgaengig, eintraegeLaden, eintragFaelligkeit, kategorienLaden,
+  durchfuehrungAnlegen, durchfuehrungRueckgaengig, eintraegeLaden, eintragFaelligkeit, hinweiseLaden, kategorienLaden,
   prueferLaden, Rueckgaengig, vorschlagLernen,
 } from '@/db/repo';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import type { EintragMitStatus, Kategorie } from '@/db/typen';
 import { sortierWert, Status } from '@/lib/faelligkeit';
-import { heute } from '@/lib/datum';
+import { heute, plusMonate } from '@/lib/datum';
 import { EintragKarte } from '@/components/EintragKarte';
 import { RueckgaengigLeiste } from '@/components/RueckgaengigLeiste';
 import { Taste } from '@/components/Taste';
@@ -27,6 +27,8 @@ export default function Uebersicht() {
   const [suche, setSuche] = useState('');
   const [sucheFokus, setSucheFokus] = useState(false);
   const [undo, setUndo] = useState<{ r: Rueckgaengig; text: string } | null>(null);
+  const [spaeterZeigen, setSpaeterZeigen] = useState(false);
+  const [anzahlHinweise, setAnzahlHinweise] = useState(0);
   const pruefer = useRef('');
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -35,6 +37,7 @@ export default function Uebersicht() {
     setEintraege(e);
     setKategorien(k);
     pruefer.current = p;
+    hinweiseLaden(db).then((x) => setAnzahlHinweise(x.hinweise.length)).catch(() => {});
   }, [db]);
 
   // Jedes Mal neu laden, wenn man auf diese Seite zurückkommt.
@@ -44,20 +47,26 @@ export default function Uebersicht() {
   const alle = useMemo(() => eintraege.map((e) => ({ e, f: eintragFaelligkeit(e, h) })), [eintraege, h]);
   const anzahlErledigt = alle.filter((x) => x.f.status === 'erledigt').length;
 
-  const liste = useMemo(() => {
+  // Unter "Alle" ohne Suche: nur was in den nächsten 3 Monaten fällig wird (+ Überfälliges / noch nie gemacht).
+  const grenze = plusMonate(h, 3);
+  const nurNaechsteMonate = !filterKategorie && !suche.trim();
+  const { liste, spaeter } = useMemo(() => {
     const s = suche.trim().toLowerCase();
-    return alle
+    const passend = alle
       .filter((x) => x.f.status !== 'erledigt')
       .filter((x) => !filterKategorie || x.e.kategorie_id === filterKategorie)
       .filter(({ e }) => !s || e.name.toLowerCase().includes(s) || e.aufgabe.toLowerCase().includes(s) || e.zusatzinfo.toLowerCase().includes(s) || e.kategorie_name.toLowerCase().includes(s))
       .sort((a, b) => sortierWert(a.f) - sortierWert(b.f) || a.e.name.localeCompare(b.e.name, 'de'));
-  }, [alle, filterKategorie, suche]);
+    if (!nurNaechsteMonate || spaeterZeigen) return { liste: passend, spaeter: 0 };
+    const nah = passend.filter((x) => !x.f.naechster || x.f.naechster <= grenze);
+    return { liste: nah, spaeter: passend.length - nah.length };
+  }, [alle, filterKategorie, suche, nurNaechsteMonate, spaeterZeigen, grenze]);
 
   const zaehler = useMemo(() => {
     const z: Record<Status, number> = { ueberfaellig: 0, nie: 0, bald: 0, ok: 0, erledigt: 0 };
-    for (const { f } of liste) z[f.status]++;
+    for (const { e, f } of alle) if (!filterKategorie || e.kategorie_id === filterKategorie) z[f.status]++;
     return z;
-  }, [liste]);
+  }, [alle, filterKategorie]);
 
   const schnellErledigt = async (e: EintragMitStatus) => {
     const r = await durchfuehrungAnlegen(db, {
@@ -93,9 +102,15 @@ export default function Uebersicht() {
         <Zaehler farbe={farben.gruen} zahl={zaehler.ok} text="in Ordnung" />
       </View>
       <View style={s.reihe}>
-        <Taste titel="📅 Diese & nächste Woche" onPress={() => router.push('/woche')} art="sekundaer" klein style={{ flex: 3 }} />
-        <Taste titel={`✅ Erledigt (${anzahlErledigt})`} onPress={() => router.push('/erledigt')} art="sekundaer" klein style={{ flex: 2 }} />
+        <Taste titel="📅 Woche" onPress={() => router.push('/woche')} art="sekundaer" klein style={{ flex: 1 }} />
+        <Taste titel="🗓 Kalender" onPress={() => router.push('/kalender')} art="sekundaer" klein style={{ flex: 1 }} />
+        <Taste titel={`✅ ${anzahlErledigt}`} onPress={() => router.push('/erledigt')} art="sekundaer" klein style={{ flex: 0.7 }} />
       </View>
+      {anzahlHinweise > 0 ? (
+        <Pressable onPress={() => router.push('/hinweise')} style={({ pressed }) => [s.hinweis, pressed && { opacity: 0.7 }]}>
+          <Text style={s.hinweisText}>💡 {anzahlHinweise === 1 ? '1 Hinweis' : `${anzahlHinweise} Hinweise`} – die App hat Muster erkannt</Text>
+        </Pressable>
+      ) : null}
       <TextInput
         value={suche}
         onChangeText={setSuche}
@@ -111,7 +126,7 @@ export default function Uebersicht() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
         <Chip aktiv={!filterKategorie} text="Alle" onPress={() => setFilterKategorie(null)} />
         {kategorien.map((k) => (
-          <Chip key={k.id} aktiv={filterKategorie === k.id} text={k.name} onPress={() => setFilterKategorie(filterKategorie === k.id ? null : k.id)} />
+          <Chip key={k.id} aktiv={filterKategorie === k.id} text={k.name} farbe={k.farbe} onPress={() => setFilterKategorie(filterKategorie === k.id ? null : k.id)} />
         ))}
         <Link href="/kategorien" asChild>
           <Pressable style={[s.chip, s.chipKategorien]}><Text style={s.chipText}>⚙ Kategorien</Text></Pressable>
@@ -138,6 +153,15 @@ export default function Uebersicht() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={s.liste}
         renderItem={({ item }) => <EintragKarte eintrag={item.e} onSchnellErledigt={schnellErledigt} onOeffnen={sucheLernen} />}
+        ListFooterComponent={
+          nurNaechsteMonate && (spaeter > 0 || spaeterZeigen) ? (
+            <Taste
+              titel={spaeterZeigen ? 'Nur nächste 3 Monate zeigen' : `Später fällig anzeigen (${spaeter})`}
+              onPress={() => setSpaeterZeigen((x) => !x)}
+              art="sekundaer" klein style={{ marginTop: 4 }}
+            />
+          ) : undefined
+        }
         ListEmptyComponent={
           <View style={s.leer}>
             <Text style={s.leerText}>
@@ -170,9 +194,10 @@ function Zaehler({ farbe, zahl, text }: { farbe: string; zahl: number; text: str
   );
 }
 
-function Chip({ aktiv, text, onPress }: { aktiv: boolean; text: string; onPress: () => void }) {
+function Chip({ aktiv, text, farbe, onPress }: { aktiv: boolean; text: string; farbe?: string | null; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={[s.chip, aktiv && s.chipAktiv]}>
+    <Pressable onPress={onPress} style={[s.chip, s.chipReihe, farbe ? { borderColor: farbe } : null, aktiv && { backgroundColor: farbe ?? farben.primaer, borderColor: farbe ?? farben.primaer }]}>
+      {farbe && !aktiv ? <View style={[s.chipPunkt, { backgroundColor: farbe }]} /> : null}
       <Text style={[s.chipText, aktiv && { color: '#fff' }]}>{text}</Text>
     </Pressable>
   );
@@ -191,7 +216,10 @@ const s = StyleSheet.create({
   suche: { backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, borderRadius: groessen.radius, minHeight: 56, paddingHorizontal: 16, fontSize: groessen.schrift, color: farben.text },
   chips: { gap: 8, paddingVertical: 2 },
   chip: { backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, borderRadius: 999, paddingHorizontal: 16, minHeight: 48, justifyContent: 'center' },
-  chipAktiv: { backgroundColor: farben.primaer, borderColor: farben.primaer },
+  chipReihe: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  chipPunkt: { width: 12, height: 12, borderRadius: 6 },
+  hinweis: { backgroundColor: '#EFF6FF', borderWidth: 2, borderColor: '#BFDBFE', borderRadius: groessen.radius, padding: 12, minHeight: 52, justifyContent: 'center' },
+  hinweisText: { fontSize: groessen.schrift, fontWeight: '700', color: farben.primaer },
   chipKategorien: { borderStyle: 'dashed' },
   chipText: { fontSize: groessen.schriftKlein, fontWeight: '600', color: farben.text },
   liste: { paddingHorizontal: groessen.abstand, paddingBottom: 140 },

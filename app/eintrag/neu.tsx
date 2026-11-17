@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungAnlegen, eintragAnlegen, einstellungenLaden, fotoSpeichern, kategorienLaden } from '@/db/repo';
+import { durchfuehrungAnlegen, eintraegeLaden, eintragAnlegen, eintragIntervall, einstellungenLaden, fotoSpeichern, kategorienLaden } from '@/db/repo';
+import type { VorbildEintrag } from '@/lib/muster';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import { STANDARD_UHRZEIT } from '@/lib/uhrzeit';
 import type { Kategorie } from '@/db/typen';
@@ -17,10 +18,14 @@ export default function NeuerEintrag() {
   const { kategorieId } = useLocalSearchParams<{ kategorieId?: string }>();
   const [kategorien, setKategorien] = useState<Kategorie[] | null>(null);
   const [standardUhrzeit, setStandardUhrzeit] = useState(STANDARD_UHRZEIT);
+  const [vorbilder, setVorbilder] = useState<VorbildEintrag[]>([]);
 
   useEffect(() => {
     kategorienLaden(db).then(setKategorien);
     einstellungenLaden(db).then((e) => setStandardUhrzeit(e.uhrzeit));
+    eintraegeLaden(db).then((l) => setVorbilder(l.map((e) => ({
+      name: e.name, kategorie_id: e.kategorie_id, intervall: eintragIntervall(e), einmalig: !!e.einmalig, aufgabe: e.aufgabe,
+    }))));
   }, [db]);
 
   if (!kategorien) return null;
@@ -39,6 +44,7 @@ export default function NeuerEintrag() {
         neu
         kategorien={kategorien}
         standardUhrzeit={standardUhrzeit}
+        vorbilder={vorbilder}
         start={{ kategorie_id: kategorieId }}
         onFotoKamera={fotosMitKamera}
         onFotoGalerie={fotosAusGalerie}

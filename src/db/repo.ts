@@ -6,6 +6,9 @@ import { heute, jetztIso } from '@/lib/datum';
 import { berechneFaelligkeit } from '@/lib/faelligkeit';
 import type { ErinnerungsEinstellungen, PlanEintrag } from '@/lib/erinnerungsplan';
 import { istGueltigeUhrzeit, STANDARD_UHRZEIT } from '@/lib/uhrzeit';
+import { freieFarbe } from '@/lib/farben';
+import type { MangelEintrag } from '@/lib/muster';
+import { Hinweis, hinweiseErstellen } from '@/lib/hinweise';
 import type { Intervall } from '@/lib/intervall';
 import { LOKALER_BETRIEB_ID } from './schema';
 import type { Durchfuehrung, Eintrag, EintragMitStatus, Ergebnis, Foto, Kategorie } from './typen';
@@ -17,7 +20,7 @@ const betrieb = () => LOKALER_BETRIEB_ID; // später: aktuell angemeldeter Betri
 
 export async function kategorienLaden(db: SQLiteDatabase): Promise<Kategorie[]> {
   return db.getAllAsync<Kategorie>(
-    `SELECT k.id, k.betrieb_id, k.name, k.sortierung,
+    `SELECT k.id, k.betrieb_id, k.name, k.sortierung, k.farbe,
             (SELECT COUNT(*) FROM eintraege e WHERE e.kategorie_id = k.id AND e.deleted_at IS NULL) AS anzahl
        FROM kategorien k
       WHERE k.betrieb_id = ? AND k.deleted_at IS NULL
@@ -31,15 +34,21 @@ export async function kategorieAnlegen(db: SQLiteDatabase, name: string): Promis
   const t = jetztIso();
   const max = await db.getFirstAsync<{ m: number | null }>(
     'SELECT MAX(sortierung) AS m FROM kategorien WHERE betrieb_id = ?', betrieb());
+  const belegt = await db.getAllAsync<{ farbe: string | null }>(
+    'SELECT farbe FROM kategorien WHERE betrieb_id = ? AND deleted_at IS NULL', betrieb());
   await db.runAsync(
-    'INSERT INTO kategorien (id, betrieb_id, name, sortierung, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-    id, betrieb(), name.trim(), (max?.m ?? -1) + 1, t, t,
+    'INSERT INTO kategorien (id, betrieb_id, name, sortierung, farbe, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    id, betrieb(), name.trim(), (max?.m ?? -1) + 1, freieFarbe(belegt.map((b) => b.farbe)), t, t,
   );
   return id;
 }
 
 export async function kategorieUmbenennen(db: SQLiteDatabase, id: string, name: string): Promise<void> {
   await db.runAsync('UPDATE kategorien SET name = ?, updated_at = ? WHERE id = ?', name.trim(), jetztIso(), id);
+}
+
+export async function kategorieFarbeSetzen(db: SQLiteDatabase, id: string, farbe: string): Promise<void> {
+  await db.runAsync('UPDATE kategorien SET farbe = ?, updated_at = ? WHERE id = ?', farbe, jetztIso(), id);
 }
 
 /** Kategorie eine Position nach oben (-1) oder unten (+1) schieben. */
@@ -79,7 +88,7 @@ export async function kategorieLoeschen(db: SQLiteDatabase, id: string): Promise
 // ---------- Einträge ----------
 
 const EINTRAG_MIT_STATUS_SQL = `
-  SELECT e.*, k.name AS kategorie_name,
+  SELECT e.*, k.name AS kategorie_name, k.farbe AS kategorie_farbe,
          (SELECT MAX(d.datum) FROM durchfuehrungen d WHERE d.eintrag_id = e.id AND d.deleted_at IS NULL) AS letzte_durchfuehrung,
          (SELECT COUNT(*) FROM durchfuehrungen d WHERE d.eintrag_id = e.id AND d.deleted_at IS NULL
              AND d.ergebnis <> 'ok' AND d.mangel_behoben_am IS NULL) AS offene_maengel
@@ -221,6 +230,29 @@ export async function durchfuehrungRueckgaengig(db: SQLiteDatabase, r: Rueckgaen
 /** Mangel als behoben markieren. */
 export async function mangelBehoben(db: SQLiteDatabase, durchfuehrungId: string, datum = heute()): Promise<void> {
   await db.runAsync('UPDATE durchfuehrungen SET mangel_behoben_am = ?, updated_at = ? WHERE id = ?', datum, jetztIso(), durchfuehrungId);
+}
+
+/** Alle Mängel (für die Mustererkennung). */
+export async function alleMaengel(db: SQLiteDatabase): Promise<MangelEintrag[]> {
+  return db.getAllAsync<MangelEintrag>(
+    `SELECT d.eintrag_id AS eintragId, d.datum, d.notiz FROM durchfuehrungen d JOIN eintraege e ON e.id = d.eintrag_id
+      WHERE d.deleted_at IS NULL AND e.deleted_at IS NULL AND d.ergebnis <> 'ok' AND d.betrieb_id = ?`, betrieb());
+}
+
+/** Wann Durchführungen erfasst wurden (für "übliche Arbeitszeit"). Übernommene Altdaten zählen nicht. */
+export async function erfassungsZeitpunkte(db: SQLiteDatabase): Promise<Date[]> {
+  const rows = await db.getAllAsync<{ created_at: string }>(
+    `SELECT created_at FROM durchfuehrungen WHERE deleted_at IS NULL AND betrieb_id = ?
+        AND beschreibung <> 'Übernommen beim Anlegen des Eintrags' ORDER BY created_at DESC LIMIT 200`, betrieb());
+  return rows.map((r) => new Date(r.created_at)).filter((d) => !isNaN(d.getTime()));
+}
+
+/** Lädt alles Nötige und erstellt die Hinweise aus erkannten Mustern. */
+export async function hinweiseLaden(db: SQLiteDatabase): Promise<{ hinweise: Hinweis[]; eintraege: EintragMitStatus[] }> {
+  const h = heute();
+  const [eintraege, maengel, zeitpunkte, ein] = await Promise.all([eintraegeLaden(db), alleMaengel(db), erfassungsZeitpunkte(db), einstellungenLaden(db)]);
+  const offen = eintraege.map((e) => ({ ...e, naechster: eintragFaelligkeit(e, h).naechster }));
+  return { hinweise: hinweiseErstellen({ eintraege: offen, maengel, zeitpunkte, standardUhrzeit: ein.uhrzeit, heuteIso: h }), eintraege };
 }
 
 /** Erinnerung bis zu einem Tag schlummern lassen (null = Schlummern beenden). Die Prüffrist bleibt. */
