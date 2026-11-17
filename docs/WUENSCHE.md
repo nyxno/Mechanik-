@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 in Version 0.3, Punkte 10–13 in **Version 0.4** umgesetzt (✅). Nichts offen.
+**Stand:** Punkte 1–9 in Version 0.3, Punkte 10–13 in Version 0.4 umgesetzt (✅). Punkte 14–15 sind offen.
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -92,4 +92,16 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
   - wiederkehrende Mängel am selben Gerät („3× Dichtung undicht in einem Jahr“),
   - Arbeiten am selben Standort zusammenlegen („2 Termine im gleichen Gebäude diese Woche“),
   - übliche Wochentage/Uhrzeiten, an denen du prüfst, als Standard vorschlagen.
+
+## 14. Mehr und grellere Gebietsfarben
+- Mehr Farben zur Auswahl (statt 12 z. B. 20–24).
+- Kräftiger / greller (Signalfarben), damit die Gebiete auch draußen gut unterscheidbar sind.
+- Weiße Schrift auf den Farben muss lesbar bleiben (bei sehr hellen Farben ggf. dunkle Schrift).
+- Bestehende Kategorien behalten ihre Farbe oder bekommen die grellere Variante derselben Farbe.
+
+## 15. „Einmalig“: Fälligkeitsdatum automatisch auf heute
+- Wird „1× Einmalig“ angetippt und ist noch kein Datum eingetragen, setzt die App automatisch **heute** ein.
+- Ist heute **Samstag oder Sonntag → automatisch Montag** (hier bewusst auch Samstag → Montag,
+  weil der Freitag davor schon vorbei wäre).
+- Das Datum kann wie gewohnt per Kalender von Hand geändert werden.
 
