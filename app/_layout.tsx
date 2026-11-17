@@ -8,7 +8,7 @@ import { DB_NAME, migrieren } from '@/db/schema';
 import { AKTION_SCHLUMMERN, berechtigungAnfragen, erinnerungenEinrichten, erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import { eintragLaden, eintragSchlummern } from '@/db/repo';
 import { formatMitTag, heute, schlummerZiel } from '@/lib/datum';
-import { farben, groessen } from '@/theme';
+import { farben, groessen, sz } from '@/theme';
 
 function Laden() {
   return (
@@ -78,18 +78,15 @@ export default function RootLayout() {
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: farben.karte },
-            headerTitleStyle: { fontSize: 20, fontWeight: '700' },
+            headerTitleStyle: { fontSize: sz(20), fontWeight: '700' },
             headerTintColor: farben.primaer,
             headerBackTitle: 'Zurück',
             contentStyle: { backgroundColor: farben.hintergrund },
           }}
         >
-          <Stack.Screen name="index" options={{ title: 'Übersicht' }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Übersicht' }} />
           <Stack.Screen name="kategorien" options={{ title: 'Kategorien' }} />
-          <Stack.Screen name="einstellungen" options={{ title: 'Einstellungen' }} />
-          <Stack.Screen name="woche" options={{ title: 'Diese & nächste Woche' }} />
           <Stack.Screen name="erledigt" options={{ title: 'Erledigt' }} />
-          <Stack.Screen name="kalender" options={{ title: 'Kalender' }} />
           <Stack.Screen name="hinweise" options={{ title: 'Erkannte Muster' }} />
           <Stack.Screen name="eintrag/neu" options={{ title: 'Neuer Eintrag' }} />
           <Stack.Screen name="eintrag/[id]/index" options={{ title: 'Eintrag' }} />

@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 in Version 0.3, Punkte 10–13 in Version 0.4 umgesetzt (✅). Punkte 14–18 sind offen.
+**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in **Version 0.5** umgesetzt (✅). Nichts offen.
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -93,30 +93,37 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
   - Arbeiten am selben Standort zusammenlegen („2 Termine im gleichen Gebäude diese Woche“),
   - übliche Wochentage/Uhrzeiten, an denen du prüfst, als Standard vorschlagen.
 
-## 14. Mehr und grellere Gebietsfarben
+## ✅ 14. Mehr und grellere Gebietsfarben
 - Mehr Farben zur Auswahl (statt 12 z. B. 20–24).
 - Kräftiger / greller (Signalfarben), damit die Gebiete auch draußen gut unterscheidbar sind.
 - Weiße Schrift auf den Farben muss lesbar bleiben (bei sehr hellen Farben ggf. dunkle Schrift).
 - Bestehende Kategorien behalten ihre Farbe oder bekommen die grellere Variante derselben Farbe.
 
-## 15. „Einmalig“: Fälligkeitsdatum automatisch auf heute
+## ✅ 15. „Einmalig“: Fälligkeitsdatum automatisch auf heute
 - Wird „1× Einmalig“ angetippt und ist noch kein Datum eingetragen, setzt die App automatisch **heute** ein.
 - Ist heute **Samstag oder Sonntag → automatisch Montag** (hier bewusst auch Samstag → Montag,
   weil der Freitag davor schon vorbei wäre).
 - Das Datum kann wie gewohnt per Kalender von Hand geändert werden.
 
-## 16. Untere Leiste mit 4 großen Tasten
+## ✅ 16. Untere Leiste mit 4 großen Tasten
 - Feste Leiste unten: **Start · Woche · Kalender · Einstellungen** (große Symbole + Text, handschuhtauglich).
 - Dafür fallen die Tasten-Reihe (Woche/Kalender/Erledigt) und „⚙ Einstellungen“ oben weg → mehr Platz für die Liste.
 - „Erledigt“ und „Kategorien“ bleiben erreichbar (z. B. Erledigt auf der Startseite klein, Kategorien in den Einstellungen).
 - „＋ Neuer Eintrag“ bleibt groß auf der Startseite (über der Leiste).
 
-## 17. „In Ordnung“ einklappen
+## ✅ 17. „In Ordnung“ einklappen
 - Grüne Einträge (in Ordnung) werden auf der Startseite zusammengefasst: **„12 in Ordnung ▼“**.
 - Antippen klappt sie auf/zu. Sichtbar ist zuerst nur, was zu tun ist (rot/gelb).
 - Bei Suche oder Kategorie-Filter alles aufgeklappt zeigen.
 
-## 18. Größere Schrift (Schalter)
+## ✅ 18. Größere Schrift (Schalter)
 - In den Einstellungen: Schriftgröße **Normal / Groß / Sehr groß**.
 - Gilt für die ganze App; Tasten wachsen mit.
+- Umgesetzt: wirkt nach einem Neustart der App (App ganz schließen und neu öffnen).
+
+## ✅ 19. Eintrag kopieren
+- Beim Eintrag eine Taste **„⧉ Kopieren“**: öffnet „Neuer Eintrag“ mit allem vorausgefüllt
+  (Gebiet, Aufgabe, Intervall, Uhrzeit, Zusatzinfo), Name mit „(Kopie)“.
+- Nicht übernommen: Fotos, Verlauf, fester Termin.
+- Praktisch bei vielen gleichen Geräten (z. B. 20 Feuerlöscher): nur Name/Standort ändern.
 

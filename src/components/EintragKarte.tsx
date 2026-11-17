@@ -4,7 +4,8 @@ import type { EintragMitStatus } from '@/db/typen';
 import { eintragFaelligkeit, eintragIntervall } from '@/db/repo';
 import { intervallText } from '@/lib/intervall';
 import { formatDeutsch, formatMitTag, heute } from '@/lib/datum';
-import { farben, groessen, statusFarben } from '@/theme';
+import { farben, groessen, statusFarben, sz } from '@/theme';
+import { textFarbe } from '@/lib/farben';
 import { StatusBadge } from './StatusBadge';
 
 interface Props {
@@ -70,7 +71,7 @@ export function EintragKarte({ eintrag, zeigeKategorie = true, onSchnellErledigt
 export function GebietMarke({ name, farbe }: { name: string; farbe: string | null }) {
   return (
     <View style={[s.marke, { backgroundColor: farbe ?? farben.grau }]}>
-      <Text style={s.markeText} numberOfLines={1}>{name}</Text>
+      <Text style={[s.markeText, { color: textFarbe(farbe ?? farben.grau) }]} numberOfLines={1}>{name}</Text>
     </View>
   );
 }
@@ -78,7 +79,7 @@ export function GebietMarke({ name, farbe }: { name: string; farbe: string | nul
 const s = StyleSheet.create({
   zeile: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' },
   marke: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, maxWidth: 200 },
-  markeText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  markeText: { color: '#fff', fontSize: sz(13), fontWeight: '800' },
   karte: {
     backgroundColor: farben.karte,
     borderRadius: groessen.radius,
@@ -92,7 +93,7 @@ const s = StyleSheet.create({
   klein: { fontSize: groessen.schriftKlein, color: farben.textLeicht, marginTop: 4 },
   faellig: { fontSize: groessen.schrift, fontWeight: '600', marginTop: 6 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  tag: { fontSize: 14, fontWeight: '700', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, overflow: 'hidden' },
+  tag: { fontSize: sz(14), fontWeight: '700', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, overflow: 'hidden' },
   schnell: {
     marginTop: 10, minHeight: groessen.tasteHoeheKlein, borderRadius: 12, borderWidth: 2, borderColor: farben.gruen,
     backgroundColor: farben.gruenHell, alignItems: 'center', justifyContent: 'center',

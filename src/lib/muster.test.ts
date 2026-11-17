@@ -92,3 +92,25 @@ test('Farben: freie Farbe', () => {
   assert.equal(freieFarbe([]), GEBIETSFARBEN[0]);
   assert.equal(freieFarbe([GEBIETSFARBEN[0]]), GEBIETSFARBEN[1]);
 });
+
+import { textFarbe, ALTE_FARBEN } from './farben';
+import { heuteOderMontag } from './datum';
+
+test('Grelle Farben: 24 Stück, alle verschieden, alte Farben abgebildet', () => {
+  assert.equal(GEBIETSFARBEN.length, 24);
+  assert.equal(new Set(GEBIETSFARBEN).size, 24);
+  for (const neu of Object.values(ALTE_FARBEN)) assert.ok(GEBIETSFARBEN.includes(neu));
+});
+
+test('Lesbare Schrift auf Farben', () => {
+  assert.equal(textFarbe('#FFD600'), '#111827'); // Gelb -> dunkle Schrift
+  assert.equal(textFarbe('#76FF03'), '#111827'); // Neongrün -> dunkle Schrift
+  assert.equal(textFarbe('#304FFE'), '#FFFFFF'); // Königsblau -> weiße Schrift
+  assert.equal(textFarbe('#6200EA'), '#FFFFFF');
+});
+
+test('Einmalig: heute, am Wochenende Montag', () => {
+  assert.equal(heuteOderMontag('2026-11-18'), '2026-11-18'); // Mi
+  assert.equal(heuteOderMontag('2026-11-21'), '2026-11-23'); // Sa -> Mo
+  assert.equal(heuteOderMontag('2026-11-22'), '2026-11-23'); // So -> Mo
+});

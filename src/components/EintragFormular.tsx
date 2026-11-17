@@ -4,7 +4,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import type { Kategorie } from '@/db/typen';
 import type { EintragDaten } from '@/db/repo';
 import { Intervall, intervallAddieren, istGueltigesIntervall } from '@/lib/intervall';
-import { aufWerktag, formatDeutsch, formatMitTag, heute, wochentag } from '@/lib/datum';
+import { aufWerktag, formatDeutsch, formatMitTag, heute, heuteOderMontag, wochentag } from '@/lib/datum';
+import { textFarbe } from '@/lib/farben';
 import { Eingabe } from './Eingabe';
 import { DatumFeld, UhrzeitFeld } from './DatumFeld';
 import { IntervallWahl } from './IntervallWahl';
@@ -64,6 +65,11 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
     if (vorschlag && !kategorieVonHand) setKategorieId(vorschlag.kategorie_id);
     setVorschlagUebernommen(false);
   }, [vorschlag?.kategorie_id, vorschlag?.vorbild]);
+  // "Einmalig" gewählt und noch kein Datum: heute eintragen (Sa/So -> Montag)
+  const einmaligSetzen = (e: boolean) => {
+    setEinmalig(e);
+    if (e && !naechster) setNaechster(heuteOderMontag(heute()));
+  };
   const vorschlagKategorie = vorschlag ? kategorien.find((k) => k.id === vorschlag.kategorie_id) : null;
   const mehrUebernehmbar = !!vorschlag && (vorschlag.einmalig || !!vorschlag.intervall || !!vorschlag.aufgabe) && !vorschlagUebernommen;
 
@@ -113,7 +119,7 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
           return (
             <Pressable key={k.id} onPress={() => { setKategorieId(k.id); setKategorieVonHand(true); }}
               style={[s.chip, k.farbe ? { borderColor: k.farbe } : null, aktiv && { backgroundColor: k.farbe ?? farben.primaer, borderColor: k.farbe ?? farben.primaer }]}>
-              <Text style={[s.chipText, aktiv && { color: '#fff' }]}>{k.name}</Text>
+              <Text style={[s.chipText, aktiv && { color: textFarbe(k.farbe ?? farben.primaer) }]}>{k.name}</Text>
             </Pressable>
           );
         })}
@@ -134,7 +140,7 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
               titel={`Auch übernehmen: ${vorschlag.einmalig ? 'einmalig' : vorschlag.intervall ? intervallText(vorschlag.intervall) : ''}${vorschlag.aufgabe ? ' + Aufgabe' : ''}`}
               onPress={() => {
                 setKategorieId(vorschlag.kategorie_id);
-                if (vorschlag.einmalig) setEinmalig(true);
+                if (vorschlag.einmalig) einmaligSetzen(true);
                 else if (vorschlag.intervall) { setEinmalig(false); setIntervall(vorschlag.intervall); }
                 if (vorschlag.aufgabe && !aufgabe.trim()) setAufgabe(vorschlag.aufgabe);
                 setVorschlagUebernommen(true);
@@ -145,7 +151,7 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
         </View>
       ) : null}
       <VorschlagEingabe feld="aufgabe" label="Was ist zu machen?" value={aufgabe} onChangeText={setAufgabe} placeholder="z. B. Sichtprüfung, Brenner reinigen, Abgasmessung" mehrzeilig />
-      <IntervallWahl wert={intervall} onChange={setIntervall} einmalig={einmalig} onEinmaligChange={setEinmalig} />
+      <IntervallWahl wert={intervall} onChange={setIntervall} einmalig={einmalig} onEinmaligChange={einmaligSetzen} />
 
       {neu && !einmalig ? (
         <DatumFeld

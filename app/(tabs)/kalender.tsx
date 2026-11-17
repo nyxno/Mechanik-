@@ -9,7 +9,7 @@ import { formatMitTag, heute, zuDate } from '@/lib/datum';
 import { monatsGrenzen, monatsRaster, termineImBereich } from '@/lib/kalender';
 import { Bildschirm } from '@/components/Bildschirm';
 import { EintragKarte } from '@/components/EintragKarte';
-import { farben, groessen } from '@/theme';
+import { farben, groessen, sz } from '@/theme';
 
 const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 const TAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -86,10 +86,10 @@ export default function Kalender() {
 const s = StyleSheet.create({
   kopf: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   pfeil: { width: 60, height: 60, borderRadius: groessen.radius, backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, alignItems: 'center', justifyContent: 'center' },
-  pfeilText: { fontSize: 24, fontWeight: '800', color: farben.text },
+  pfeilText: { fontSize: sz(24), fontWeight: '800', color: farben.text },
   titelFeld: { flex: 1, alignItems: 'center' },
   titel: { fontSize: groessen.titel, fontWeight: '800', color: farben.text },
-  unter: { fontSize: 13, color: farben.textLeicht },
+  unter: { fontSize: sz(13), color: farben.textLeicht },
   wochentage: { flexDirection: 'row' },
   wochentag: { flex: 1, textAlign: 'center', fontWeight: '700', color: farben.textLeicht, marginBottom: 4 },
   raster: { flexDirection: 'row', flexWrap: 'wrap' },
@@ -99,8 +99,8 @@ const s = StyleSheet.create({
   gewaehlt: { backgroundColor: farben.primaer },
   zahl: { fontSize: groessen.schrift, fontWeight: '700', color: farben.text },
   punkte: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 3, marginTop: 4 },
-  punkt: { width: 9, height: 9, borderRadius: 5, borderWidth: 1, borderColor: '#fff' },
-  mehr: { fontSize: 11, fontWeight: '700', color: farben.textLeicht },
+  punkt: { width: 10, height: 10, borderRadius: 5, borderWidth: 1, borderColor: 'rgba(0,0,0,0.35)' },
+  mehr: { fontSize: sz(11), fontWeight: '700', color: farben.textLeicht },
   tagTitel: { fontSize: groessen.schriftGross, fontWeight: '800', color: farben.text, marginBottom: 10 },
   leer: { color: farben.grau, fontSize: groessen.schrift },
   hinweis: { color: farben.grau, fontSize: groessen.schriftKlein, marginTop: 4 },

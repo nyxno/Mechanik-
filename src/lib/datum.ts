@@ -109,3 +109,11 @@ export function montagDerWoche(iso: IsoDatum): IsoDatum {
   const t = wochentag(iso);
   return plusTage(iso, t === 0 ? -6 : 1 - t);
 }
+
+/** Heute, oder am Wochenende der nächste Montag (Standarddatum für "Einmalig"). */
+export function heuteOderMontag(heuteIso: IsoDatum): IsoDatum {
+  const t = wochentag(heuteIso);
+  if (t === 6) return plusTage(heuteIso, 2);
+  if (t === 0) return plusTage(heuteIso, 1);
+  return heuteIso;
+}

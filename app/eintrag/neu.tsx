@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungAnlegen, eintraegeLaden, eintragAnlegen, eintragIntervall, einstellungenLaden, fotoSpeichern, kategorienLaden } from '@/db/repo';
+import { durchfuehrungAnlegen, eintraegeLaden, eintragAnlegen, EintragDaten, eintragIntervall, eintragLaden, einstellungenLaden, fotoSpeichern, kategorienLaden } from '@/db/repo';
+import { heute, heuteOderMontag } from '@/lib/datum';
 import type { VorbildEintrag } from '@/lib/muster';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import { STANDARD_UHRZEIT } from '@/lib/uhrzeit';
@@ -15,7 +16,9 @@ import { groessen } from '@/theme';
 
 export default function NeuerEintrag() {
   const db = useSQLiteContext();
-  const { kategorieId } = useLocalSearchParams<{ kategorieId?: string }>();
+  const { kategorieId, vonId } = useLocalSearchParams<{ kategorieId?: string; vonId?: string }>();
+  // Beim Kopieren: Vorlage aus dem bestehenden Eintrag (ohne Fotos, Verlauf, festen Termin)
+  const [vorlage, setVorlage] = useState<Partial<EintragDaten> | null>(vonId ? null : { kategorie_id: kategorieId });
   const [kategorien, setKategorien] = useState<Kategorie[] | null>(null);
   const [standardUhrzeit, setStandardUhrzeit] = useState(STANDARD_UHRZEIT);
   const [vorbilder, setVorbilder] = useState<VorbildEintrag[]>([]);
@@ -26,9 +29,21 @@ export default function NeuerEintrag() {
     eintraegeLaden(db).then((l) => setVorbilder(l.map((e) => ({
       name: e.name, kategorie_id: e.kategorie_id, intervall: eintragIntervall(e), einmalig: !!e.einmalig, aufgabe: e.aufgabe,
     }))));
-  }, [db]);
+    if (vonId) {
+      eintragLaden(db, vonId).then((e) => setVorlage(e ? {
+        kategorie_id: e.kategorie_id,
+        name: `${e.name} (Kopie)`,
+        aufgabe: e.aufgabe,
+        intervall: eintragIntervall(e),
+        einmalig: !!e.einmalig,
+        zusatzinfo: e.zusatzinfo,
+        uhrzeit: e.uhrzeit,
+        naechster_termin: e.einmalig ? heuteOderMontag(heute()) : null,
+      } : {}));
+    }
+  }, [db, vonId]);
 
-  if (!kategorien) return null;
+  if (!kategorien || !vorlage) return null;
   if (kategorien.length === 0) {
     return (
       <Bildschirm>
@@ -40,12 +55,13 @@ export default function NeuerEintrag() {
 
   return (
     <Bildschirm>
+      {vonId ? <Stack.Screen options={{ title: 'Eintrag kopieren' }} /> : null}
       <EintragFormular
         neu
         kategorien={kategorien}
         standardUhrzeit={standardUhrzeit}
         vorbilder={vorbilder}
-        start={{ kategorie_id: kategorieId }}
+        start={vorlage}
         onFotoKamera={fotosMitKamera}
         onFotoGalerie={fotosAusGalerie}
         onAbbrechen={() => router.back()}

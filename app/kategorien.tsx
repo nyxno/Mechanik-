@@ -4,11 +4,11 @@ import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { kategorieAnlegen, kategorieFarbeSetzen, kategorieLoeschen, kategorienLaden, kategorieUmbenennen, kategorieVerschieben } from '@/db/repo';
-import { GEBIETSFARBEN } from '@/lib/farben';
+import { GEBIETSFARBEN, textFarbe } from '@/lib/farben';
 import type { Kategorie } from '@/db/typen';
 import { Eingabe } from '@/components/Eingabe';
 import { Taste } from '@/components/Taste';
-import { farben, groessen } from '@/theme';
+import { farben, groessen, sz } from '@/theme';
 
 export default function Kategorien() {
   const db = useSQLiteContext();
@@ -72,7 +72,7 @@ export default function Kategorien() {
                 {GEBIETSFARBEN.map((f) => (
                   <Pressable key={f} onPress={async () => { await kategorieFarbeSetzen(db, item.id, f); laden(); }}
                     style={[s.farbe, { backgroundColor: f }, item.farbe === f && s.farbeAktiv]}>
-                    {item.farbe === f ? <Text style={s.haken}>✓</Text> : null}
+                    {item.farbe === f ? <Text style={[s.haken, { color: textFarbe(f) }]}>✓</Text> : null}
                   </Pressable>
                 ))}
               </View>
@@ -108,13 +108,13 @@ function Pfeil({ text, aus, onPress }: { text: string; aus: boolean; onPress: ()
 const s = StyleSheet.create({
   punkt: { width: 22, height: 22, borderRadius: 11, marginRight: 12 },
   farbLabel: { fontSize: groessen.schrift, fontWeight: '600', color: farben.text, marginTop: 14, marginBottom: 8 },
-  farben: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  farbe: { width: 52, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  farben: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  farbe: { width: 50, height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   farbeAktiv: { borderWidth: 4, borderColor: farben.text },
-  haken: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  haken: { color: '#fff', fontSize: sz(24), fontWeight: '900' },
   namensFeld: { flex: 1, minHeight: groessen.tasteHoehe, justifyContent: 'center' },
   pfeil: { width: 56, height: 56, borderRadius: 12, backgroundColor: farben.grauHell, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
-  pfeilText: { fontSize: 24, fontWeight: '800', color: farben.text },
+  pfeilText: { fontSize: sz(24), fontWeight: '800', color: farben.text },
   seite: { flex: 1, backgroundColor: farben.hintergrund },
   liste: { padding: groessen.abstand, paddingBottom: 40 },
   neu: { marginBottom: 20 },

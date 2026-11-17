@@ -1,7 +1,7 @@
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { fotoUri } from '@/lib/fotos';
-import { farben, groessen } from '@/theme';
+import { farben, groessen, sz } from '@/theme';
 import { Taste } from './Taste';
 
 interface Props {
@@ -58,7 +58,7 @@ const s = StyleSheet.create({
   bildRahmen: { width: 120, height: 120, borderRadius: 12, overflow: 'hidden', backgroundColor: farben.grauHell },
   bild: { width: '100%', height: '100%' },
   x: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 999, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  xText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  xText: { color: '#fff', fontWeight: '700', fontSize: sz(16) },
   leer: { color: farben.grau, fontSize: groessen.schriftKlein, marginBottom: 6 },
   tasten: { flexDirection: 'row', gap: 10, marginTop: 8 },
 });

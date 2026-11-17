@@ -15,7 +15,7 @@ import { wochenendHinweis } from '@/components/EintragFormular';
 import { FotoLeiste } from '@/components/FotoLeiste';
 import { Taste } from '@/components/Taste';
 import { VorschlagEingabe } from '@/components/Vorschlaege';
-import { ergebnisFarben, farben, groessen } from '@/theme';
+import { ergebnisFarben, farben, groessen, sz } from '@/theme';
 
 const ERGEBNISSE: Ergebnis[] = ['ok', 'maengel', 'ausser_betrieb'];
 
@@ -162,7 +162,7 @@ const s = StyleSheet.create({
   label: { fontSize: groessen.schrift, fontWeight: '600', color: farben.text, marginBottom: 6 },
   reihe: { flexDirection: 'row', gap: 10, marginBottom: groessen.abstand },
   ergebnis: { flex: 1, minHeight: 76, borderWidth: 3, borderRadius: groessen.radius, backgroundColor: farben.karte, alignItems: 'center', justifyContent: 'center', padding: 6 },
-  ergebnisSymbol: { fontSize: 24, fontWeight: '800' },
+  ergebnisSymbol: { fontSize: sz(24), fontWeight: '800' },
   ergebnisText: { fontSize: groessen.schriftKlein, fontWeight: '700', textAlign: 'center' },
   info: { backgroundColor: farben.gruenHell, borderRadius: groessen.radius, padding: 14, marginBottom: groessen.abstand },
   infoText: { fontSize: groessen.schrift, color: farben.gruen, fontWeight: '600' },

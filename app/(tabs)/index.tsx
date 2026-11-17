@@ -1,9 +1,8 @@
 // Startseite: alle offenen Einträge nach Fälligkeit sortiert, mit Ampelfarben, Kategorie-Filter und Suche.
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Link, router, Stack, useFocusEffect } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   durchfuehrungAnlegen, durchfuehrungRueckgaengig, eintraegeLaden, eintragFaelligkeit, hinweiseLaden, kategorienLaden,
   prueferLaden, Rueckgaengig, vorschlagLernen,
@@ -12,15 +11,15 @@ import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import type { EintragMitStatus, Kategorie } from '@/db/typen';
 import { sortierWert, Status } from '@/lib/faelligkeit';
 import { heute, plusMonate } from '@/lib/datum';
+import { textFarbe } from '@/lib/farben';
 import { EintragKarte } from '@/components/EintragKarte';
 import { RueckgaengigLeiste } from '@/components/RueckgaengigLeiste';
 import { Taste } from '@/components/Taste';
 import { VorschlagLeiste } from '@/components/Vorschlaege';
-import { farben, groessen } from '@/theme';
+import { farben, groessen, sz } from '@/theme';
 
 export default function Uebersicht() {
   const db = useSQLiteContext();
-  const insets = useSafeAreaInsets();
   const [eintraege, setEintraege] = useState<EintragMitStatus[]>([]);
   const [kategorien, setKategorien] = useState<Kategorie[]>([]);
   const [filterKategorie, setFilterKategorie] = useState<string | null>(null);
@@ -29,6 +28,7 @@ export default function Uebersicht() {
   const [undo, setUndo] = useState<{ r: Rueckgaengig; text: string } | null>(null);
   const [spaeterZeigen, setSpaeterZeigen] = useState(false);
   const [anzahlHinweise, setAnzahlHinweise] = useState(0);
+  const [okOffen, setOkOffen] = useState(false);
   const pruefer = useRef('');
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -61,6 +61,19 @@ export default function Uebersicht() {
     const nah = passend.filter((x) => !x.f.naechster || x.f.naechster <= grenze);
     return { liste: nah, spaeter: passend.length - nah.length };
   }, [alle, filterKategorie, suche, nurNaechsteMonate, spaeterZeigen, grenze]);
+
+  // "In Ordnung" (grün) zusammenklappen – außer bei Suche oder Kategorie-Filter
+  type Zeile = { typ: 'eintrag'; e: EintragMitStatus } | { typ: 'ok'; anzahl: number };
+  const zeilen: Zeile[] = useMemo(() => {
+    if (!nurNaechsteMonate) return liste.map((x) => ({ typ: 'eintrag' as const, e: x.e }));
+    const offen = liste.filter((x) => x.f.status !== 'ok');
+    const gruen = liste.filter((x) => x.f.status === 'ok');
+    return [
+      ...offen.map((x) => ({ typ: 'eintrag' as const, e: x.e })),
+      ...(gruen.length ? [{ typ: 'ok' as const, anzahl: gruen.length }] : []),
+      ...(okOffen ? gruen.map((x) => ({ typ: 'eintrag' as const, e: x.e })) : []),
+    ];
+  }, [liste, nurNaechsteMonate, okOffen]);
 
   const zaehler = useMemo(() => {
     const z: Record<Status, number> = { ueberfaellig: 0, nie: 0, bald: 0, ok: 0, erledigt: 0 };
@@ -102,15 +115,15 @@ export default function Uebersicht() {
         <Zaehler farbe={farben.gruen} zahl={zaehler.ok} text="in Ordnung" />
       </View>
       <View style={s.reihe}>
-        <Taste titel="📅 Woche" onPress={() => router.push('/woche')} art="sekundaer" klein style={{ flex: 1 }} />
-        <Taste titel="🗓 Kalender" onPress={() => router.push('/kalender')} art="sekundaer" klein style={{ flex: 1 }} />
-        <Taste titel={`✅ ${anzahlErledigt}`} onPress={() => router.push('/erledigt')} art="sekundaer" klein style={{ flex: 0.7 }} />
-      </View>
-      {anzahlHinweise > 0 ? (
-        <Pressable onPress={() => router.push('/hinweise')} style={({ pressed }) => [s.hinweis, pressed && { opacity: 0.7 }]}>
-          <Text style={s.hinweisText}>💡 {anzahlHinweise === 1 ? '1 Hinweis' : `${anzahlHinweise} Hinweise`} – die App hat Muster erkannt</Text>
+        {anzahlHinweise > 0 ? (
+          <Pressable onPress={() => router.push('/hinweise')} style={({ pressed }) => [s.hinweis, { flex: 1 }, pressed && { opacity: 0.7 }]}>
+            <Text style={s.hinweisText}>💡 {anzahlHinweise === 1 ? '1 Hinweis' : `${anzahlHinweise} Hinweise`}</Text>
+          </Pressable>
+        ) : null}
+        <Pressable onPress={() => router.push('/erledigt')} style={({ pressed }) => [s.erledigt, anzahlHinweise === 0 && { flex: 1 }, pressed && { opacity: 0.7 }]}>
+          <Text style={s.erledigtText}>✅ Erledigt ({anzahlErledigt})</Text>
         </Pressable>
-      ) : null}
+      </View>
       <TextInput
         value={suche}
         onChangeText={setSuche}
@@ -137,22 +150,20 @@ export default function Uebersicht() {
 
   return (
     <View style={s.seite}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Pressable onPress={() => router.push('/einstellungen')} hitSlop={10} style={({ pressed }) => [s.kopfTaste, pressed && { opacity: 0.6 }]}>
-              <Text style={s.kopfTasteText}>⚙ Einstellungen</Text>
-            </Pressable>
-          ),
-        }}
-      />
       <FlatList
-        data={liste}
-        keyExtractor={(x) => x.e.id}
+        data={zeilen}
+        keyExtractor={(z) => (z.typ === 'ok' ? '__ok' : z.e.id)}
         ListHeaderComponent={kopf}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={s.liste}
-        renderItem={({ item }) => <EintragKarte eintrag={item.e} onSchnellErledigt={schnellErledigt} onOeffnen={sucheLernen} />}
+        renderItem={({ item }) => item.typ === 'ok' ? (
+          <Pressable onPress={() => setOkOffen((x) => !x)} style={({ pressed }) => [s.okZeile, pressed && { opacity: 0.7 }]}>
+            <Text style={s.okText}>✓ {item.anzahl} in Ordnung</Text>
+            <Text style={s.okText}>{okOffen ? '▲ zuklappen' : '▼ anzeigen'}</Text>
+          </Pressable>
+        ) : (
+          <EintragKarte eintrag={item.e} onSchnellErledigt={schnellErledigt} onOeffnen={sucheLernen} />
+        )}
         ListFooterComponent={
           nurNaechsteMonate && (spaeter > 0 || spaeterZeigen) ? (
             <Taste
@@ -173,9 +184,9 @@ export default function Uebersicht() {
         }
       />
 
-      <RueckgaengigLeiste text={undo?.text ?? null} onRueckgaengig={rueckgaengig} onAblauf={undoAblauf} unten={groessen.tasteHoehe + groessen.abstand * 2 + insets.bottom} />
+      <RueckgaengigLeiste text={undo?.text ?? null} onRueckgaengig={rueckgaengig} onAblauf={undoAblauf} unten={groessen.tasteHoehe + groessen.abstand * 2} />
 
-      <View style={[s.fuss, { paddingBottom: groessen.abstand + insets.bottom }]}>
+      <View style={s.fuss}>
         <Taste
           titel="＋ Neuer Eintrag"
           onPress={() => router.push({ pathname: '/eintrag/neu', params: filterKategorie ? { kategorieId: filterKategorie } : {} })}
@@ -198,7 +209,7 @@ function Chip({ aktiv, text, farbe, onPress }: { aktiv: boolean; text: string; f
   return (
     <Pressable onPress={onPress} style={[s.chip, s.chipReihe, farbe ? { borderColor: farbe } : null, aktiv && { backgroundColor: farbe ?? farben.primaer, borderColor: farbe ?? farben.primaer }]}>
       {farbe && !aktiv ? <View style={[s.chipPunkt, { backgroundColor: farbe }]} /> : null}
-      <Text style={[s.chipText, aktiv && { color: '#fff' }]}>{text}</Text>
+      <Text style={[s.chipText, aktiv && { color: textFarbe(farbe ?? farben.primaer) }]}>{text}</Text>
     </Pressable>
   );
 }
@@ -207,18 +218,22 @@ const s = StyleSheet.create({
   seite: { flex: 1, backgroundColor: farben.hintergrund },
   kopf: { paddingTop: groessen.abstand, paddingBottom: 12, gap: 10 },
   kopfTaste: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, backgroundColor: farben.grauHell },
-  kopfTasteText: { fontSize: 16, fontWeight: '700', color: farben.primaer },
+  kopfTasteText: { fontSize: sz(16), fontWeight: '700', color: farben.primaer },
   ampel: { flexDirection: 'row', gap: 8 },
   reihe: { flexDirection: 'row', gap: 8 },
   zaehler: { flex: 1, borderRadius: groessen.radius, paddingVertical: 10, alignItems: 'center' },
-  zaehlerZahl: { color: '#fff', fontSize: 26, fontWeight: '800' },
-  zaehlerText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  zaehlerZahl: { color: '#fff', fontSize: sz(26), fontWeight: '800' },
+  zaehlerText: { color: '#fff', fontSize: sz(13), fontWeight: '600' },
   suche: { backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, borderRadius: groessen.radius, minHeight: 56, paddingHorizontal: 16, fontSize: groessen.schrift, color: farben.text },
   chips: { gap: 8, paddingVertical: 2 },
   chip: { backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, borderRadius: 999, paddingHorizontal: 16, minHeight: 48, justifyContent: 'center' },
   chipReihe: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   chipPunkt: { width: 12, height: 12, borderRadius: 6 },
-  hinweis: { backgroundColor: '#EFF6FF', borderWidth: 2, borderColor: '#BFDBFE', borderRadius: groessen.radius, padding: 12, minHeight: 52, justifyContent: 'center' },
+  erledigt: { backgroundColor: farben.gruenHell, borderWidth: 2, borderColor: farben.gruen, borderRadius: groessen.radius, paddingHorizontal: 14, minHeight: 52, justifyContent: 'center', alignItems: 'center' },
+  erledigtText: { fontSize: groessen.schrift, fontWeight: '700', color: farben.gruen },
+  okZeile: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: farben.gruenHell, borderWidth: 2, borderColor: farben.gruen, borderRadius: groessen.radius, paddingHorizontal: 16, minHeight: groessen.tasteHoehe, marginBottom: 12 },
+  okText: { fontSize: groessen.schrift, fontWeight: '800', color: farben.gruen },
+  hinweis: { backgroundColor: '#EFF6FF', borderWidth: 2, borderColor: '#BFDBFE', borderRadius: groessen.radius, paddingHorizontal: 12, minHeight: 52, justifyContent: 'center', alignItems: 'center' },
   hinweisText: { fontSize: groessen.schrift, fontWeight: '700', color: farben.primaer },
   chipKategorien: { borderStyle: 'dashed' },
   chipText: { fontSize: groessen.schriftKlein, fontWeight: '600', color: farben.text },

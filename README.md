@@ -5,7 +5,7 @@ Thermen, Heizungen, Leitern, Feuerlöscher, Anschlagmittel, Druckbehälter, Masc
 
 Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 
-## Was die App kann (Version 0.4)
+## Was die App kann (Version 0.5)
 
 - **Kategorien** anlegen, umbenennen, löschen (z. B. Heizung, Brandschutz, Leitern)
 - **Einträge** je Kategorie: Name, Aufgabe, Intervall (frei wählbar), Zusatzinfo, Fotos
@@ -29,9 +29,14 @@ Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 - **Lernende Vorschläge** beim Schreiben und Suchen (nur am Handy, ohne Internet)
 - **Startseite „Alle“** zeigt nur, was in den nächsten 3 Monaten fällig wird (Rest per Taste)
 - **Kalender** (Monatsansicht) mit farbigen Punkten je Gebiet
-- **Gebietsfarben** – jede Kategorie hat eine eigene, wählbare Farbe
+- **Gebietsfarben** – 24 grelle Signalfarben, je Kategorie wählbar
 - **Muster erkennen**: Gebiet/Intervall beim Anlegen automatisch zuordnen, wiederkehrende Mängel,
   Arbeiten am selben Standort bündeln, übliche Arbeitszeit für Erinnerungen
+- **Untere Leiste**: Start · Woche · Kalender · Einstellungen
+- **„In Ordnung“ eingeklappt** auf der Startseite – sichtbar ist zuerst, was zu tun ist
+- **Schriftgröße** Normal / Groß / Sehr groß
+- **Eintrag kopieren** für viele gleiche Geräte
+- **Einmalig** trägt automatisch heute ein (am Wochenende Montag)
 
 Noch nicht enthalten: Benutzerkonten, Abgleich zwischen Geräten, PDF-Export.
 Die Datenstruktur ist dafür aber schon vorbereitet (siehe `docs/ARCHITEKTUR.md`).
@@ -63,7 +68,7 @@ Das ist bei selbst gebauten Apps normal.
 
 ```
 app/                    Bildschirme (eine Datei = eine Seite)
-  index.tsx             Übersicht (Startseite)
+  (tabs)/               Untere Leiste: index (Start), woche, kalender, einstellungen
   kategorien.tsx        Kategorien verwalten
   eintrag/neu.tsx       Neuer Eintrag
   eintrag/[id]/         Eintrag anzeigen, bearbeiten, Durchführung erfassen

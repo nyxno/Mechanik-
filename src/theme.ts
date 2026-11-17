@@ -1,3 +1,5 @@
+import { openDatabaseSync } from 'expo-sqlite';
+import { DB_NAME } from './db/schema';
 // Farben und Größen an einem Ort. Große Tasten und Schrift: bedienbar mit Handschuhen.
 export const farben = {
   hintergrund: '#F3F4F6',
@@ -19,15 +21,39 @@ export const farben = {
   grauHell: '#E5E7EB',
 };
 
+// Schriftgröße (Einstellung "Normal / Groß / Sehr groß"). Wird beim Start der App gelesen.
+export const SCHRIFT_STUFEN = [
+  { faktor: 1, text: 'Normal' },
+  { faktor: 1.2, text: 'Groß' },
+  { faktor: 1.4, text: 'Sehr groß' },
+];
+
+function schriftFaktorLesen(): number {
+  try {
+    const db = openDatabaseSync(DB_NAME);
+    const r = db.getFirstSync<{ wert: string }>("SELECT wert FROM einstellungen WHERE schluessel = 'schrift_faktor'");
+    db.closeSync();
+    const f = parseFloat(r?.wert ?? '1');
+    return SCHRIFT_STUFEN.some((x) => x.faktor === f) ? f : 1;
+  } catch {
+    return 1; // z. B. beim allerersten Start, bevor es die Tabelle gibt
+  }
+}
+
+export const SCHRIFT_FAKTOR = schriftFaktorLesen();
+/** Größe passend zur gewählten Schriftstufe. */
+export const sz = (n: number) => Math.round(n * SCHRIFT_FAKTOR);
+const hoehe = (n: number) => Math.round(n * (1 + (SCHRIFT_FAKTOR - 1) * 0.6));
+
 export const groessen = {
-  tasteHoehe: 64,
-  tasteHoeheKlein: 52,
+  tasteHoehe: hoehe(64),
+  tasteHoeheKlein: hoehe(52),
   radius: 14,
   abstand: 16,
-  schrift: 18,
-  schriftKlein: 15,
-  schriftGross: 22,
-  titel: 26,
+  schrift: sz(18),
+  schriftKlein: sz(15),
+  schriftGross: sz(22),
+  titel: sz(26),
 };
 
 import type { Status } from './lib/faelligkeit';

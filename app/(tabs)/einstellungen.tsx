@@ -3,14 +3,15 @@ import { useCallback, useState } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { einstellungenLaden, einstellungenSpeichern, prueferLaden, prueferSpeichern } from '@/db/repo';
+import { einstellungenLaden, einstellungenSpeichern, prueferLaden, prueferSpeichern, schriftFaktorSpeichern } from '@/db/repo';
+import { router } from 'expo-router';
 import { Eingabe } from '@/components/Eingabe';
 import type { ErinnerungsEinstellungen } from '@/lib/erinnerungsplan';
 import { berechtigungAnfragen, berechtigungStatus, erinnerungenNeuPlanen, genaueUhrzeitErlauben, testErinnerung } from '@/lib/erinnerungen';
 import { Bildschirm } from '@/components/Bildschirm';
 import { UhrzeitFeld } from '@/components/DatumFeld';
 import { Taste } from '@/components/Taste';
-import { farben, groessen } from '@/theme';
+import { farben, groessen, SCHRIFT_FAKTOR, SCHRIFT_STUFEN } from '@/theme';
 
 const VORWARNUNG = [
   { tage: 0, text: 'Nur am Tag' },
@@ -27,6 +28,7 @@ export default function Einstellungen() {
   const [status, setStatus] = useState<{ erlaubt: boolean; genau: boolean } | null>(null);
   const [geplant, setGeplant] = useState<number | null>(null);
   const [pruefer, setPruefer] = useState('');
+  const [schrift, setSchrift] = useState(SCHRIFT_FAKTOR);
 
   const laden = useCallback(async () => {
     setE(await einstellungenLaden(db));
@@ -56,6 +58,23 @@ export default function Einstellungen() {
         returnKeyType="done"
         hinweis="Wird bei jeder Durchführung automatisch eingetragen (änderbar)."
       />
+      <Taste titel="🏷 Kategorien & Farben verwalten" onPress={() => router.push('/kategorien')} art="sekundaer" klein style={{ marginBottom: groessen.abstand }} />
+
+      <Text style={s.label}>🔠 Schriftgröße</Text>
+      <View style={[s.reihe, { marginBottom: 6 }]}>
+        {SCHRIFT_STUFEN.map((st) => (
+          <Wahl key={st.faktor} aktiv={schrift === st.faktor} text={st.text} onPress={async () => {
+            setSchrift(st.faktor);
+            await schriftFaktorSpeichern(db, st.faktor);
+          }} />
+        ))}
+      </View>
+      <Text style={s.hinweis}>
+        {schrift !== SCHRIFT_FAKTOR
+          ? '⚠ Gilt nach dem Neustart: App ganz schließen (aus der Liste der offenen Apps wischen) und wieder öffnen.'
+          : 'Gilt für die ganze App. Nach einer Änderung die App einmal neu starten.'}
+      </Text>
+
       <Text style={s.abschnitt}>🔔 Erinnerungen</Text>
 
       {!status.erlaubt ? (

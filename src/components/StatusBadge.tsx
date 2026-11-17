@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { Status } from '@/lib/faelligkeit';
-import { statusFarben } from '@/theme';
+import { statusFarben, sz } from '@/theme';
 
 export function StatusBadge({ status, text }: { status: Status; text?: string }) {
   const f = statusFarben(status);
@@ -13,5 +13,5 @@ export function StatusBadge({ status, text }: { status: Status; text?: string })
 
 const s = StyleSheet.create({
   badge: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start' },
-  text: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  text: { color: '#fff', fontWeight: '700', fontSize: sz(14) },
 });

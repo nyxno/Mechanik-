@@ -4,7 +4,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { ausDate, formatDeutsch, heute, zuDate } from '@/lib/datum';
 import { uhrzeitAusDate } from '@/lib/uhrzeit';
-import { farben, groessen } from '@/theme';
+import { farben, groessen, sz } from '@/theme';
 
 const WOCHENTAGE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 
@@ -106,9 +106,9 @@ const s = StyleSheet.create({
     backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, borderRadius: groessen.radius,
     minHeight: groessen.tasteHoehe, paddingHorizontal: 16,
   },
-  symbol: { fontSize: 24 },
+  symbol: { fontSize: sz(24) },
   wert: { fontSize: groessen.schriftGross, fontWeight: '700', color: farben.text, flexShrink: 1 },
   leeren: { width: groessen.tasteHoehe, minHeight: groessen.tasteHoehe, borderRadius: groessen.radius, backgroundColor: farben.grauHell, alignItems: 'center', justifyContent: 'center' },
-  leerenText: { fontSize: 22, fontWeight: '700', color: farben.text },
+  leerenText: { fontSize: sz(22), fontWeight: '700', color: farben.text },
   hinweis: { marginTop: 4, color: farben.textLeicht, fontSize: groessen.schriftKlein },
 });

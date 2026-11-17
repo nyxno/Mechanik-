@@ -129,7 +129,10 @@ export default function EintragDetail() {
           ) : null}
         </>
       )}
-      <Taste titel="✎ Bearbeiten" onPress={() => router.push({ pathname: '/eintrag/[id]/bearbeiten', params: { id } })} art="sekundaer" klein style={{ marginTop: 10, marginBottom: 20 }} />
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 10, marginBottom: 20 }}>
+        <Taste titel="✎ Bearbeiten" onPress={() => router.push({ pathname: '/eintrag/[id]/bearbeiten', params: { id } })} art="sekundaer" klein style={{ flex: 1 }} />
+        <Taste titel="⧉ Kopieren" onPress={() => router.push({ pathname: '/eintrag/neu', params: { vonId: id } })} art="sekundaer" klein style={{ flex: 1 }} />
+      </View>
 
       {eintrag.aufgabe ? <Abschnitt titel="Was ist zu machen?" text={eintrag.aufgabe} /> : null}
       {eintrag.zusatzinfo ? <Abschnitt titel="Zusatzinfo" text={eintrag.zusatzinfo} /> : null}

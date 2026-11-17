@@ -320,6 +320,10 @@ export async function einstellungenSpeichern(db: SQLiteDatabase, e: ErinnerungsE
   });
 }
 
+export async function schriftFaktorSpeichern(db: SQLiteDatabase, faktor: number): Promise<void> {
+  await db.runAsync("INSERT OR REPLACE INTO einstellungen (schluessel, wert) VALUES ('schrift_faktor', ?)", String(faktor));
+}
+
 export async function prueferLaden(db: SQLiteDatabase): Promise<string> {
   const r = await db.getFirstAsync<{ wert: string }>("SELECT wert FROM einstellungen WHERE schluessel = 'pruefer_name'");
   return r?.wert ?? '';
