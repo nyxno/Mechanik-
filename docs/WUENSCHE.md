@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5 umgesetzt (✅). Punkte 20–22 sind offen.
+**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in **Version 0.6** umgesetzt (✅). Nichts offen.
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -127,24 +127,27 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Nicht übernommen: Fotos, Verlauf, fester Termin.
 - Praktisch bei vielen gleichen Geräten (z. B. 20 Feuerlöscher): nur Name/Standort ändern.
 
-## 20. Hitze- und Staubstunden eintragen (Zulagen)
+## ✅ 20. Hitze- und Staubstunden eintragen (Zulagen)
 - **Hitzestunden** und **Staubstunden** getrennt eintragen, jeweils beim Eintrag/Projekt.
 - So wenig Aufwand wie möglich: große Tasten **＋½ h / ＋1 h / ＋2 h** (und von Hand korrigierbar),
   direkt beim Erfassen der Durchführung und als Schnelltaste beim Eintrag.
 - Gespeichert mit Datum, damit sie dem richtigen Monat zugeordnet werden.
-- Offen: Sind „Projekte“ die bestehenden Einträge (Geräte), oder braucht es etwas Neues
-  (z. B. Baustelle/Kunde)? Vorschlag: die bestehenden Einträge.
-- Offen: Auch Stunden ohne Durchführung eintragen können (z. B. nur Arbeit an einem Gerät)? Vorschlag: ja.
+- **Entschieden:** Projekte = die bestehenden Einträge.
+- **Entschieden:** Stunden nur zusammen mit einer Durchführung.
 
-## 21. Monatsübersicht der Zulagenstunden
+## ✅ 21. Monatsübersicht der Zulagenstunden
 - Am Monatsende eine grobe Übersicht: Summe Hitzestunden, Summe Staubstunden,
   wo am meisten (nach Eintrag und Gebiet), Anzahl erledigter Arbeiten im Monat.
 - Benachrichtigung am **letzten Tag des Monats**; fällt der auf **Samstag oder Sonntag → einen Tag vorher**.
-  Offen: Bei Sonntag „einen Tag vorher“ wäre Samstag – oder lieber immer der letzte Werktag (Freitag)?
-  Vorschlag: letzter Werktag (Freitag).
+  **Entschieden:** immer der letzte Werktag (Sa/So → Freitag). Benachrichtigung um 15:00 Uhr;
+  zusätzlich öffnet sich die Übersicht automatisch beim nächsten Öffnen der App (ab dem Abschlusstag,
+  bzw. in den ersten 7 Tagen des neuen Monats nachgeholt).
+- Eigene Taste „📊 Monatsstatistik“ im Kalender und in den Einstellungen.
+- Inhalt: Hitze/Staub/gesamt mit Vergleich Vormonat, Arbeiten erledigt, Rangliste nach Eintrag und Gebiet,
+  Wochentage, Ergebnisse, Auffälliges, Tagesliste der Zulagen, Ausblick nächster Monat.
 - Übersicht jederzeit auch für frühere Monate aufrufbar.
 
-## 22. Kalender: heute Erledigtes anzeigen
+## ✅ 22. Kalender: heute Erledigtes anzeigen
 - Im Kalender steht beim heutigen Tag immer, **was heute schon gemacht wurde** (✓ Liste).
-- Vorschlag: auch bei vergangenen Tagen anzeigen, was an dem Tag erledigt wurde.
+- **Entschieden:** Bei allen vergangenen Tagen wird angezeigt, was erledigt wurde (✓ Zahl im Kalender).
 

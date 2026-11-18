@@ -8,6 +8,7 @@ import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import type { Durchfuehrung, EintragMitStatus, Foto } from '@/db/typen';
 import { intervallText } from '@/lib/intervall';
 import { wiederkehrendeMaengel } from '@/lib/muster';
+import { stundenText } from '@/lib/statistik';
 import { GebietMarke } from '@/components/EintragKarte';
 import { formatDeutsch, formatMitTag, heute, schlummerZiel } from '@/lib/datum';
 import { fotoDateiLoeschen } from '@/lib/fotos';
@@ -155,6 +156,12 @@ export default function EintragDetail() {
             </Text>
             {d.notiz ? <Text style={s.verlaufText}>Mangel: {d.notiz}</Text> : null}
             <Text style={s.verlaufText}>{d.beschreibung}</Text>
+            {d.hitze_stunden > 0 || d.staub_stunden > 0 ? (
+              <Text style={s.klein}>
+                {d.hitze_stunden > 0 ? `🔥 Hitze ${stundenText(d.hitze_stunden)}` : ''}{d.hitze_stunden > 0 && d.staub_stunden > 0 ? '   ' : ''}
+                {d.staub_stunden > 0 ? `🌫 Staub ${stundenText(d.staub_stunden)}` : ''}
+              </Text>
+            ) : null}
             {d.pruefer ? <Text style={s.klein}>Geprüft von: {d.pruefer}</Text> : null}
             {df.length ? <FotoLeiste dateien={df.map((x) => x.datei)} onAnsehen={setAnsicht} /> : null}
           </Pressable>

@@ -15,6 +15,7 @@ import { wochenendHinweis } from '@/components/EintragFormular';
 import { FotoLeiste } from '@/components/FotoLeiste';
 import { Taste } from '@/components/Taste';
 import { VorschlagEingabe } from '@/components/Vorschlaege';
+import { StundenWahl } from '@/components/StundenWahl';
 import { ergebnisFarben, farben, groessen, sz } from '@/theme';
 
 const ERGEBNISSE: Ergebnis[] = ['ok', 'maengel', 'ausser_betrieb'];
@@ -30,6 +31,8 @@ export default function DurchfuehrungErfassen() {
   const [pruefer, setPruefer] = useState('');
   const [prueferGespeichert, setPrueferGespeichert] = useState('');
   const [fotos, setFotos] = useState<string[]>([]);
+  const [hitze, setHitze] = useState(0);
+  const [staub, setStaub] = useState(0);
   /** Vom Benutzer gewählter nächster Termin; null = automatisch (Datum + Intervall). */
   const [naechsterFest, setNaechsterFest] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -59,6 +62,8 @@ export default function DurchfuehrungErfassen() {
         ergebnis,
         notiz: ergebnis === 'ok' ? null : notiz,
         pruefer,
+        hitze,
+        staub,
       });
       for (const f of fotos) await fotoSpeichern(db, { durchfuehrungId: r.durchfuehrungId }, f);
       // Namen merken, wenn noch keiner eingestellt ist
@@ -121,6 +126,11 @@ export default function DurchfuehrungErfassen() {
         placeholder="z. B. Sichtprüfung ohne Mängel, Dichtung getauscht …"
         mehrzeilig
       />
+
+      <Text style={s.label}>Zulagen</Text>
+      <StundenWahl symbol="🔥" label="Hitzestunden" wert={hitze} onChange={setHitze} />
+      <StundenWahl symbol="🌫" label="Staubstunden" wert={staub} onChange={setStaub} />
+      <View style={{ height: groessen.abstand - 10 }} />
 
       <VorschlagEingabe feld="pruefer" label="Geprüft von" value={pruefer} onChangeText={setPruefer} placeholder="Name des Prüfers" />
 

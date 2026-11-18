@@ -54,6 +54,8 @@ export interface Durchfuehrung {
   notiz: string | null;
   pruefer: string | null;
   mangel_behoben_am: IsoDatum | null;
+  hitze_stunden: number;
+  staub_stunden: number;
   created_at: string;
 }
 

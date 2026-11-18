@@ -6,7 +6,8 @@ import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import * as Notifications from 'expo-notifications';
 import { DB_NAME, migrieren } from '@/db/schema';
 import { AKTION_SCHLUMMERN, berechtigungAnfragen, erinnerungenEinrichten, erinnerungenNeuPlanen } from '@/lib/erinnerungen';
-import { eintragLaden, eintragSchlummern } from '@/db/repo';
+import { eintragLaden, eintragSchlummern, statistikGezeigtLaden } from '@/db/repo';
+import { automatischZeigen, monatsSchluessel } from '@/lib/statistik';
 import { formatMitTag, heute, schlummerZiel } from '@/lib/datum';
 import { farben, groessen, sz } from '@/theme';
 
@@ -19,6 +20,8 @@ function Laden() {
   );
 }
 
+let statistikGeoeffnet: string | null = null;
+
 /** Richtet Erinnerungen ein, plant sie neu und öffnet den Eintrag, wenn eine Meldung angetippt wird. */
 function ErinnerungsSteuerung() {
   const db = useSQLiteContext();
@@ -29,16 +32,32 @@ function ErinnerungsSteuerung() {
       await berechtigungAnfragen();
       await erinnerungenNeuPlanen(db);
     })();
+    // Monatsübersicht automatisch zeigen (am Monatsende bzw. nachholen in den ersten Tagen des neuen Monats)
+    const statistikPruefen = async () => {
+      const ziel = automatischZeigen(new Date(), await statistikGezeigtLaden(db));
+      if (!ziel) return;
+      const key = monatsSchluessel(ziel.jahr, ziel.monat);
+      if (statistikGeoeffnet === key) return; // nicht doppelt öffnen
+      statistikGeoeffnet = key;
+      router.push({ pathname: '/statistik', params: { monat: key } });
+    };
+    setTimeout(() => { statistikPruefen().catch(() => {}); }, 800);
     // Beim Öffnen und Verlassen der App neu planen (z. B. für die Überfällig-Meldung).
     const sub = AppState.addEventListener('change', (z) => {
       if (z === 'active' || z === 'background') erinnerungenNeuPlanen(db);
+      if (z === 'active') statistikPruefen().catch(() => {});
     });
     return () => sub.remove();
   }, [db]);
 
   useEffect(() => {
     const oeffnen = (n: Notifications.Notification) => {
-      const id = n.request.content.data?.eintragId;
+      const daten = n.request.content.data ?? {};
+      if (daten.ziel === 'statistik') {
+        router.push({ pathname: '/statistik', params: typeof daten.monat === 'string' ? { monat: daten.monat } : {} });
+        return;
+      }
+      const id = daten.eintragId;
       if (typeof id === 'string' && id) router.push({ pathname: '/eintrag/[id]', params: { id } });
       else router.navigate('/');
     };
@@ -88,6 +107,7 @@ export default function RootLayout() {
           <Stack.Screen name="kategorien" options={{ title: 'Kategorien' }} />
           <Stack.Screen name="erledigt" options={{ title: 'Erledigt' }} />
           <Stack.Screen name="hinweise" options={{ title: 'Erkannte Muster' }} />
+          <Stack.Screen name="statistik" options={{ title: 'Monatsstatistik' }} />
           <Stack.Screen name="eintrag/neu" options={{ title: 'Neuer Eintrag' }} />
           <Stack.Screen name="eintrag/[id]/index" options={{ title: 'Eintrag' }} />
           <Stack.Screen name="eintrag/[id]/bearbeiten" options={{ title: 'Eintrag bearbeiten' }} />

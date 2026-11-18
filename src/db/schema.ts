@@ -12,7 +12,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { ALTE_FARBEN, GEBIETSFARBEN } from '@/lib/farben';
 
 export const DB_NAME = 'wartungsapp.db';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 /** Der lokale Standard-Betrieb, solange es keine Konten gibt. */
 export const LOKALER_BETRIEB_ID = 'lokal';
@@ -176,6 +176,16 @@ export async function migrieren(db: SQLiteDatabase): Promise<void> {
       await db.runAsync('UPDATE kategorien SET farbe = ? WHERE farbe = ?', neu, alt);
     }
     version = 5;
+  }
+
+  if (version === 5) {
+    // Version 6: Zulagenstunden (Hitze / Staub) je Durchführung.
+    await db.execAsync(`
+      ALTER TABLE durchfuehrungen ADD COLUMN hitze_stunden REAL NOT NULL DEFAULT 0;
+      ALTER TABLE durchfuehrungen ADD COLUMN staub_stunden REAL NOT NULL DEFAULT 0;
+      CREATE INDEX IF NOT EXISTS idx_durchfuehrungen_datum ON durchfuehrungen(betrieb_id, deleted_at, datum);
+    `);
+    version = 6;
   }
 
   // Spätere Änderungen am Datenbank-Aufbau kommen hier als weitere "if (version === N)"-Blöcke.

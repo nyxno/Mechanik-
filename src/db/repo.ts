@@ -8,6 +8,7 @@ import type { ErinnerungsEinstellungen, PlanEintrag } from '@/lib/erinnerungspla
 import { istGueltigeUhrzeit, STANDARD_UHRZEIT } from '@/lib/uhrzeit';
 import { freieFarbe } from '@/lib/farben';
 import type { MangelEintrag } from '@/lib/muster';
+import type { StatZeile } from '@/lib/statistik';
 import { Hinweis, hinweiseErstellen } from '@/lib/hinweise';
 import type { Intervall } from '@/lib/intervall';
 import { LOKALER_BETRIEB_ID } from './schema';
@@ -170,6 +171,9 @@ export interface NeueDurchfuehrung {
   ergebnis?: Ergebnis;
   notiz?: string | null;
   pruefer?: string | null;
+  /** Zulagenstunden */
+  hitze?: number;
+  staub?: number;
 }
 
 /** Was nötig ist, um eine gerade gespeicherte Durchführung rückgängig zu machen. */
@@ -199,9 +203,10 @@ export async function durchfuehrungAnlegen(db: SQLiteDatabase, d: NeueDurchfuehr
   }
   await db.withTransactionAsync(async () => {
     await db.runAsync(
-      `INSERT INTO durchfuehrungen (id, betrieb_id, eintrag_id, datum, beschreibung, ergebnis, notiz, pruefer, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      id, betrieb(), d.eintragId, d.datum, d.beschreibung.trim(), ergebnis, d.notiz?.trim() || null, d.pruefer?.trim() || null, t, t,
+      `INSERT INTO durchfuehrungen (id, betrieb_id, eintrag_id, datum, beschreibung, ergebnis, notiz, pruefer, hitze_stunden, staub_stunden, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      id, betrieb(), d.eintragId, d.datum, d.beschreibung.trim(), ergebnis, d.notiz?.trim() || null, d.pruefer?.trim() || null,
+      Math.max(0, d.hitze ?? 0), Math.max(0, d.staub ?? 0), t, t,
     );
     await db.runAsync('UPDATE eintraege SET naechster_termin = ?, schlummern_bis = NULL, updated_at = ? WHERE id = ?', d.naechsterTermin, t, d.eintragId);
     for (const m of behobene) {
@@ -253,6 +258,31 @@ export async function hinweiseLaden(db: SQLiteDatabase): Promise<{ hinweise: Hin
   const [eintraege, maengel, zeitpunkte, ein] = await Promise.all([eintraegeLaden(db), alleMaengel(db), erfassungsZeitpunkte(db), einstellungenLaden(db)]);
   const offen = eintraege.map((e) => ({ ...e, naechster: eintragFaelligkeit(e, h).naechster }));
   return { hinweise: hinweiseErstellen({ eintraege: offen, maengel, zeitpunkte, standardUhrzeit: ein.uhrzeit, heuteIso: h }), eintraege };
+}
+
+/** Alle Durchführungen in einem Zeitraum, mit Eintrag und Gebiet (für Statistik und Kalender). */
+export async function durchfuehrungenImBereich(db: SQLiteDatabase, von: string, bis: string): Promise<StatZeile[]> {
+  return db.getAllAsync<StatZeile>(
+    `SELECT d.datum, d.eintrag_id AS eintragId, e.name, e.kategorie_id AS kategorieId, k.name AS kategorieName, k.farbe,
+            d.ergebnis, d.hitze_stunden AS hitze, d.staub_stunden AS staub
+       FROM durchfuehrungen d
+       JOIN eintraege e ON e.id = d.eintrag_id
+       JOIN kategorien k ON k.id = e.kategorie_id
+      WHERE d.betrieb_id = ? AND d.deleted_at IS NULL AND e.deleted_at IS NULL
+        AND d.datum BETWEEN ? AND ?
+        AND d.beschreibung <> 'Übernommen beim Anlegen des Eintrags'
+      ORDER BY d.datum, d.created_at`,
+    betrieb(), von, bis,
+  );
+}
+
+export async function statistikGezeigtLaden(db: SQLiteDatabase): Promise<string | null> {
+  const r = await db.getFirstAsync<{ wert: string }>("SELECT wert FROM einstellungen WHERE schluessel = 'statistik_gezeigt'");
+  return r?.wert ?? null;
+}
+
+export async function statistikGezeigtSpeichern(db: SQLiteDatabase, monat: string): Promise<void> {
+  await db.runAsync("INSERT OR REPLACE INTO einstellungen (schluessel, wert) VALUES ('statistik_gezeigt', ?)", monat);
 }
 
 /** Erinnerung bis zu einem Tag schlummern lassen (null = Schlummern beenden). Die Prüffrist bleibt. */

@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { eintraegeLaden, einstellungenLaden, zuPlanEintraegen } from '@/db/repo';
 import { erinnerungsPlan } from './erinnerungsplan';
+import { monatsSchluessel, naechsteStatistik } from './statistik';
 
 /** Android: Ton eines Kanals lässt sich nach dem Anlegen nicht mehr ändern -> neuer Ton = neue Kanal-ID. */
 export const KANAL_ID = 'pruefungen-signal-v1';
@@ -116,6 +117,20 @@ async function planen(db: SQLiteDatabase): Promise<number> {
         date: e.wann,
         channelId: KANAL_ID,
       },
+    });
+  }
+  // Monatsübersicht am letzten Werktag des Monats
+  if (einstellungen.aktiv) {
+    const n = naechsteStatistik(new Date());
+    const name = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][n.monat];
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `📊 Deine Monatsübersicht ${name}`,
+        body: 'Zulagenstunden, erledigte Arbeiten und wo du am meisten warst – antippen zum Ansehen.',
+        sound: TON,
+        data: { ziel: 'statistik', monat: monatsSchluessel(n.jahr, n.monat) },
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.wann, channelId: KANAL_ID },
     });
   }
   return plan.length;

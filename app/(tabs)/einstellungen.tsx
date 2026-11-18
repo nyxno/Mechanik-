@@ -58,6 +58,7 @@ export default function Einstellungen() {
         returnKeyType="done"
         hinweis="Wird bei jeder Durchführung automatisch eingetragen (änderbar)."
       />
+ <Taste titel="📊 Monatsstatistik" onPress={() => router.push('/statistik')} art="sekundaer" klein style={{ marginBottom: 10 }} />
       <Taste titel="🏷 Kategorien & Farben verwalten" onPress={() => router.push('/kategorien')} art="sekundaer" klein style={{ marginBottom: groessen.abstand }} />
 
       <Text style={s.label}>🔠 Schriftgröße</Text>
