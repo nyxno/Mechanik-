@@ -5,7 +5,7 @@ Thermen, Heizungen, Leitern, Feuerlöscher, Anschlagmittel, Druckbehälter, Masc
 
 Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 
-## Was die App kann (Version 0.6)
+## Was die App kann (Version 0.7)
 
 - **Kategorien** anlegen, umbenennen, löschen (z. B. Heizung, Brandschutz, Leitern)
 - **Einträge** je Kategorie: Name, Aufgabe, Intervall (frei wählbar), Zusatzinfo, Fotos
@@ -40,6 +40,9 @@ Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 - **Hitze- und Staubstunden** beim Abhaken mit ＋½/＋1/＋2-Tasten
 - **Monatsstatistik** (automatisch am letzten Werktag, sonst per Taste): Zulagen, wo am meisten, Vergleich, Tagesliste
 - **Kalender** zeigt bei jedem Tag auch, was erledigt wurde
+- **⏱ Zulagen-Taste**: Hitze-/Staubstunden pro Tag mit − / ＋, zählt in die Monatsstatistik
+- **Unterkategorien** (z. B. Heizung → Thermen, Kessel)
+- **📦 Materialliste** mit Fotos, Menge, Notiz, Zuordnung zum Gerät, abhaken wie eine Einkaufsliste
 
 Noch nicht enthalten: Benutzerkonten, Abgleich zwischen Geräten, PDF-Export.
 Die Datenstruktur ist dafür aber schon vorbereitet (siehe `docs/ARCHITEKTUR.md`).

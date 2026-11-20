@@ -6,6 +6,8 @@ export interface Kategorie {
   betrieb_id: string;
   name: string;
   sortierung: number;
+  /** Hauptkategorie, wenn dies eine Unterkategorie ist (sonst null). */
+  eltern_id: string | null;
   /** Farbe des Gebiets, z. B. "#EA580C". */
   farbe: string | null;
   anzahl?: number; // Anzahl Einträge (nur in Listen)
@@ -36,6 +38,8 @@ export interface Eintrag {
 export interface EintragMitStatus extends Eintrag {
   kategorie_name: string;
   kategorie_farbe: string | null;
+  /** Hauptkategorie (gleich kategorie_id, wenn der Eintrag direkt in einer Hauptkategorie liegt). */
+  hauptkategorie_id: string;
   letzte_durchfuehrung: IsoDatum | null;
   /** Anzahl offener (nicht behobener) Mängel. */
   offene_maengel: number;
@@ -59,11 +63,28 @@ export interface Durchfuehrung {
   created_at: string;
 }
 
+export interface Material {
+  id: string;
+  name: string;
+  menge: number | null;
+  einheit: string;
+  notiz: string;
+  eintrag_id: string | null;
+  besorgt: number;
+  created_at: string;
+  updated_at: string;
+  /** nur in Listen */
+  eintrag_name?: string | null;
+  erstes_foto?: string | null;
+  fotos_anzahl?: number;
+}
+
 export interface Foto {
   id: string;
   betrieb_id: string;
   eintrag_id: string | null;
   durchfuehrung_id: string | null;
+  material_id: string | null;
   datei: string;
   created_at: string;
 }

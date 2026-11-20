@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6 umgesetzt (✅). Punkte 23–24 sind offen.
+**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in **Version 0.7** umgesetzt (✅). Nichts offen.
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -151,19 +151,25 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Im Kalender steht beim heutigen Tag immer, **was heute schon gemacht wurde** (✓ Liste).
 - **Entschieden:** Bei allen vergangenen Tagen wird angezeigt, was erledigt wurde (✓ Zahl im Kalender).
 
-## 23. Zulagen-Taste: Hitze-/Staubstunden direkt eintragen
+## ✅ 23. Zulagen-Taste: Hitze-/Staubstunden direkt eintragen
 - Eigene Taste (z. B. „⏱ Zulagen“ auf der Startseite), unabhängig von Einträgen/Durchführungen.
 - Zwei Zeilen: **🔥 Hitze** und **🌫 Staub**, jeweils große **− / ＋** Tasten, Anzeige der Stunden für heute.
 - Wird automatisch in der Monatsstatistik (Summen, Tagesliste) mitgerechnet.
-- Vorschlag: Standard ist heute, Tag kann gewechselt werden (◀ ▶), falls man es am nächsten Tag nachträgt.
-- Vorschlag: Schrittweite ½ Stunde.
+- Umgesetzt: Standard ist heute, Tag kann mit ◀ ▶ gewechselt werden; Schrittweite ½ Stunde.
 - Stunden aus Durchführungen zählen weiterhin zusätzlich mit.
 
-## 24. Unterkategorien
+## ✅ 24. Unterkategorien
 - Unter einer Kategorie weitere Unterkategorien anlegen, z. B. Heizung → Thermen, Kessel;
   Brandschutz → Feuerlöscher, Rauchmelder.
-- Vorschlag: eine Ebene (Kategorie → Unterkategorie) reicht und bleibt übersichtlich.
-- Vorschlag: Unterkategorie übernimmt die Farbe der Hauptkategorie.
+- Umgesetzt: eine Ebene (Kategorie → Unterkategorie); Unterkategorie hat die Farbe der Hauptkategorie.
+- Löschen einer Hauptkategorie: Unterkategorien werden zu Hauptkategorien (nichts geht verloren).
 - Filter: Hauptkategorie zeigt alles inkl. Unterkategorien; Unterkategorie nur ihre Einträge.
 - Statistik und automatische Zuordnung berücksichtigen Unterkategorien.
+
+## ✅ 25. Materialliste mit Bildern
+- Eigene Liste für Material / Ersatzteile: **Name, Menge + Einheit, Notiz** (z. B. Artikelnummer, Lieferant)
+  und **mehrere Fotos** (Kamera oder Galerie).
+- Abhaken „besorgt“ wie eine Einkaufsliste; erledigte Einträge ausblendbar.
+- Optional einem Eintrag (Gerät) zuordnen – beim Gerät steht dann „📦 Material“ mit den passenden Teilen.
+- Lernende Vorschläge beim Namen.
 

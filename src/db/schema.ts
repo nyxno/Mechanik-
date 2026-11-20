@@ -12,7 +12,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { ALTE_FARBEN, GEBIETSFARBEN } from '@/lib/farben';
 
 export const DB_NAME = 'wartungsapp.db';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 /** Der lokale Standard-Betrieb, solange es keine Konten gibt. */
 export const LOKALER_BETRIEB_ID = 'lokal';
@@ -186,6 +186,46 @@ export async function migrieren(db: SQLiteDatabase): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_durchfuehrungen_datum ON durchfuehrungen(betrieb_id, deleted_at, datum);
     `);
     version = 6;
+  }
+
+  if (version === 6) {
+    // Version 7: Zulagen pro Tag (Zulagen-Taste), Unterkategorien, Materialliste mit Fotos.
+    await db.execAsync(`
+      ALTER TABLE kategorien ADD COLUMN eltern_id TEXT REFERENCES kategorien(id);  -- NULL = Hauptkategorie
+      ALTER TABLE fotos ADD COLUMN material_id TEXT;
+
+      CREATE TABLE IF NOT EXISTS zulagen (
+        id          TEXT PRIMARY KEY NOT NULL,
+        betrieb_id  TEXT NOT NULL REFERENCES betriebe(id),
+        datum       TEXT NOT NULL,                 -- ein Datensatz pro Tag
+        hitze       REAL NOT NULL DEFAULT 0,
+        staub       REAL NOT NULL DEFAULT 0,
+        benutzer_id TEXT,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL,
+        deleted_at  TEXT,
+        synced_at   TEXT,
+        UNIQUE (betrieb_id, datum)
+      );
+
+      CREATE TABLE IF NOT EXISTS material (
+        id          TEXT PRIMARY KEY NOT NULL,
+        betrieb_id  TEXT NOT NULL REFERENCES betriebe(id),
+        name        TEXT NOT NULL,
+        menge       REAL,
+        einheit     TEXT NOT NULL DEFAULT 'Stk',
+        notiz       TEXT NOT NULL DEFAULT '',
+        eintrag_id  TEXT REFERENCES eintraege(id),  -- optional: gehört zu diesem Gerät
+        besorgt     INTEGER NOT NULL DEFAULT 0,     -- 1 = abgehakt
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL,
+        deleted_at  TEXT,
+        synced_at   TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_material_eintrag ON material(eintrag_id, deleted_at);
+      CREATE INDEX IF NOT EXISTS idx_fotos_material ON fotos(material_id, deleted_at);
+    `);
+    version = 7;
   }
 
   // Spätere Änderungen am Datenbank-Aufbau kommen hier als weitere "if (version === N)"-Blöcke.

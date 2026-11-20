@@ -8,11 +8,12 @@ import type { ErinnerungsEinstellungen, PlanEintrag } from '@/lib/erinnerungspla
 import { istGueltigeUhrzeit, STANDARD_UHRZEIT } from '@/lib/uhrzeit';
 import { freieFarbe } from '@/lib/farben';
 import type { MangelEintrag } from '@/lib/muster';
-import type { StatZeile } from '@/lib/statistik';
+import type { StatZeile, TagesZulage } from '@/lib/statistik';
 import { Hinweis, hinweiseErstellen } from '@/lib/hinweise';
 import type { Intervall } from '@/lib/intervall';
 import { LOKALER_BETRIEB_ID } from './schema';
-import type { Durchfuehrung, Eintrag, EintragMitStatus, Ergebnis, Foto, Kategorie } from './typen';
+import type { Durchfuehrung, Eintrag, EintragMitStatus, Ergebnis, Foto, Kategorie, Material } from './typen';
+import { geschwister } from '@/lib/kategorien';
 
 const neueId = () => Crypto.randomUUID();
 const betrieb = () => LOKALER_BETRIEB_ID; // später: aktuell angemeldeter Betrieb
@@ -21,7 +22,7 @@ const betrieb = () => LOKALER_BETRIEB_ID; // später: aktuell angemeldeter Betri
 
 export async function kategorienLaden(db: SQLiteDatabase): Promise<Kategorie[]> {
   return db.getAllAsync<Kategorie>(
-    `SELECT k.id, k.betrieb_id, k.name, k.sortierung, k.farbe,
+    `SELECT k.id, k.betrieb_id, k.name, k.sortierung, k.farbe, k.eltern_id,
             (SELECT COUNT(*) FROM eintraege e WHERE e.kategorie_id = k.id AND e.deleted_at IS NULL) AS anzahl
        FROM kategorien k
       WHERE k.betrieb_id = ? AND k.deleted_at IS NULL
@@ -30,16 +31,18 @@ export async function kategorienLaden(db: SQLiteDatabase): Promise<Kategorie[]> 
   );
 }
 
-export async function kategorieAnlegen(db: SQLiteDatabase, name: string): Promise<string> {
+export async function kategorieAnlegen(db: SQLiteDatabase, name: string, elternId: string | null = null): Promise<string> {
   const id = neueId();
   const t = jetztIso();
   const max = await db.getFirstAsync<{ m: number | null }>(
-    'SELECT MAX(sortierung) AS m FROM kategorien WHERE betrieb_id = ?', betrieb());
+    'SELECT MAX(sortierung) AS m FROM kategorien WHERE betrieb_id = ? AND deleted_at IS NULL AND eltern_id IS ?', betrieb(), elternId);
+  // Unterkategorie übernimmt die Farbe der Hauptkategorie, sonst eine freie Farbe
+  const eltern = elternId ? await db.getFirstAsync<{ farbe: string | null }>('SELECT farbe FROM kategorien WHERE id = ?', elternId) : null;
   const belegt = await db.getAllAsync<{ farbe: string | null }>(
-    'SELECT farbe FROM kategorien WHERE betrieb_id = ? AND deleted_at IS NULL', betrieb());
+    'SELECT farbe FROM kategorien WHERE betrieb_id = ? AND deleted_at IS NULL AND eltern_id IS NULL', betrieb());
   await db.runAsync(
-    'INSERT INTO kategorien (id, betrieb_id, name, sortierung, farbe, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    id, betrieb(), name.trim(), (max?.m ?? -1) + 1, freieFarbe(belegt.map((b) => b.farbe)), t, t,
+    'INSERT INTO kategorien (id, betrieb_id, name, sortierung, farbe, eltern_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    id, betrieb(), name.trim(), (max?.m ?? -1) + 1, eltern?.farbe ?? freieFarbe(belegt.map((b) => b.farbe)), elternId, t, t,
   );
   return id;
 }
@@ -49,12 +52,13 @@ export async function kategorieUmbenennen(db: SQLiteDatabase, id: string, name: 
 }
 
 export async function kategorieFarbeSetzen(db: SQLiteDatabase, id: string, farbe: string): Promise<void> {
-  await db.runAsync('UPDATE kategorien SET farbe = ?, updated_at = ? WHERE id = ?', farbe, jetztIso(), id);
+  // Unterkategorien bekommen dieselbe Farbe
+  await db.runAsync('UPDATE kategorien SET farbe = ?, updated_at = ? WHERE id = ? OR eltern_id = ?', farbe, jetztIso(), id, id);
 }
 
 /** Kategorie eine Position nach oben (-1) oder unten (+1) schieben. */
 export async function kategorieVerschieben(db: SQLiteDatabase, id: string, richtung: -1 | 1): Promise<void> {
-  const liste = await kategorienLaden(db);
+  const liste = geschwister(id, await kategorienLaden(db));
   const i = liste.findIndex((k) => k.id === id);
   const j = i + richtung;
   if (i < 0 || j < 0 || j >= liste.length) return;
@@ -83,13 +87,15 @@ export async function kategorieLoeschen(db: SQLiteDatabase, id: string): Promise
       t, id, id);
     await db.runAsync('UPDATE eintraege SET deleted_at = ?, updated_at = ? WHERE kategorie_id = ? AND deleted_at IS NULL', t, t, id);
     await db.runAsync('UPDATE kategorien SET deleted_at = ?, updated_at = ? WHERE id = ?', t, t, id);
+    // Unterkategorien bleiben erhalten und werden zu Hauptkategorien
+    await db.runAsync('UPDATE kategorien SET eltern_id = NULL, updated_at = ? WHERE eltern_id = ?', t, id);
   });
 }
 
 // ---------- Einträge ----------
 
 const EINTRAG_MIT_STATUS_SQL = `
-  SELECT e.*, k.name AS kategorie_name, k.farbe AS kategorie_farbe,
+  SELECT e.*, k.name AS kategorie_name, k.farbe AS kategorie_farbe, COALESCE(k.eltern_id, k.id) AS hauptkategorie_id,
          (SELECT MAX(d.datum) FROM durchfuehrungen d WHERE d.eintrag_id = e.id AND d.deleted_at IS NULL) AS letzte_durchfuehrung,
          (SELECT COUNT(*) FROM durchfuehrungen d WHERE d.eintrag_id = e.id AND d.deleted_at IS NULL
              AND d.ergebnis <> 'ok' AND d.mangel_behoben_am IS NULL) AS offene_maengel
@@ -263,17 +269,92 @@ export async function hinweiseLaden(db: SQLiteDatabase): Promise<{ hinweise: Hin
 /** Alle Durchführungen in einem Zeitraum, mit Eintrag und Gebiet (für Statistik und Kalender). */
 export async function durchfuehrungenImBereich(db: SQLiteDatabase, von: string, bis: string): Promise<StatZeile[]> {
   return db.getAllAsync<StatZeile>(
-    `SELECT d.datum, d.eintrag_id AS eintragId, e.name, e.kategorie_id AS kategorieId, k.name AS kategorieName, k.farbe,
-            d.ergebnis, d.hitze_stunden AS hitze, d.staub_stunden AS staub
+    `SELECT d.datum, d.eintrag_id AS eintragId, e.name, COALESCE(p.id, k.id) AS kategorieId,
+            COALESCE(p.name, k.name) AS kategorieName, k.farbe, d.ergebnis, d.hitze_stunden AS hitze, d.staub_stunden AS staub
        FROM durchfuehrungen d
        JOIN eintraege e ON e.id = d.eintrag_id
        JOIN kategorien k ON k.id = e.kategorie_id
+       LEFT JOIN kategorien p ON p.id = k.eltern_id
       WHERE d.betrieb_id = ? AND d.deleted_at IS NULL AND e.deleted_at IS NULL
         AND d.datum BETWEEN ? AND ?
         AND d.beschreibung <> 'Übernommen beim Anlegen des Eintrags'
       ORDER BY d.datum, d.created_at`,
     betrieb(), von, bis,
   );
+}
+
+// ---------- Zulagen-Taste (Hitze / Staub pro Tag) ----------
+
+export async function zulageLaden(db: SQLiteDatabase, datum: string): Promise<TagesZulage> {
+  const r = await db.getFirstAsync<TagesZulage>(
+    'SELECT datum, hitze, staub FROM zulagen WHERE betrieb_id = ? AND datum = ? AND deleted_at IS NULL', betrieb(), datum);
+  return r ?? { datum, hitze: 0, staub: 0 };
+}
+
+export async function zulageSetzen(db: SQLiteDatabase, datum: string, hitze: number, staub: number): Promise<void> {
+  const t = jetztIso();
+  await db.runAsync(
+    `INSERT INTO zulagen (id, betrieb_id, datum, hitze, staub, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT (betrieb_id, datum) DO UPDATE SET hitze = excluded.hitze, staub = excluded.staub, updated_at = excluded.updated_at, deleted_at = NULL`,
+    neueId(), betrieb(), datum, Math.max(0, hitze), Math.max(0, staub), t, t,
+  );
+}
+
+export async function zulagenImBereich(db: SQLiteDatabase, von: string, bis: string): Promise<TagesZulage[]> {
+  return db.getAllAsync<TagesZulage>(
+    'SELECT datum, hitze, staub FROM zulagen WHERE betrieb_id = ? AND deleted_at IS NULL AND datum BETWEEN ? AND ? ORDER BY datum',
+    betrieb(), von, bis);
+}
+
+// ---------- Materialliste ----------
+
+const MATERIAL_SQL = `
+  SELECT m.*, e.name AS eintrag_name,
+         (SELECT f.datei FROM fotos f WHERE f.material_id = m.id AND f.deleted_at IS NULL ORDER BY f.created_at LIMIT 1) AS erstes_foto,
+         (SELECT COUNT(*) FROM fotos f WHERE f.material_id = m.id AND f.deleted_at IS NULL) AS fotos_anzahl
+    FROM material m LEFT JOIN eintraege e ON e.id = m.eintrag_id AND e.deleted_at IS NULL
+   WHERE m.betrieb_id = ? AND m.deleted_at IS NULL`;
+
+export async function materialLaden(db: SQLiteDatabase, eintragId?: string): Promise<Material[]> {
+  if (eintragId) return db.getAllAsync<Material>(`${MATERIAL_SQL} AND m.eintrag_id = ? ORDER BY m.besorgt, m.name COLLATE NOCASE`, betrieb(), eintragId);
+  return db.getAllAsync<Material>(`${MATERIAL_SQL} ORDER BY m.besorgt, m.updated_at DESC`, betrieb());
+}
+
+export async function materialEinzeln(db: SQLiteDatabase, id: string): Promise<Material | null> {
+  return db.getFirstAsync<Material>(`${MATERIAL_SQL} AND m.id = ?`, betrieb(), id);
+}
+
+export interface MaterialDaten { name: string; menge: number | null; einheit: string; notiz: string; eintrag_id: string | null }
+
+export async function materialSpeichern(db: SQLiteDatabase, id: string | null, d: MaterialDaten): Promise<string> {
+  const t = jetztIso();
+  if (id) {
+    await db.runAsync('UPDATE material SET name = ?, menge = ?, einheit = ?, notiz = ?, eintrag_id = ?, updated_at = ? WHERE id = ?',
+      d.name.trim(), d.menge, d.einheit, d.notiz.trim(), d.eintrag_id, t, id);
+  } else {
+    id = neueId();
+    await db.runAsync(
+      'INSERT INTO material (id, betrieb_id, name, menge, einheit, notiz, eintrag_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      id, betrieb(), d.name.trim(), d.menge, d.einheit, d.notiz.trim(), d.eintrag_id, t, t);
+  }
+  await vorschlagLernen(db, 'material', d.name);
+  return id;
+}
+
+export async function materialBesorgt(db: SQLiteDatabase, id: string, besorgt: boolean): Promise<void> {
+  await db.runAsync('UPDATE material SET besorgt = ?, updated_at = ? WHERE id = ?', besorgt ? 1 : 0, jetztIso(), id);
+}
+
+export async function materialLoeschen(db: SQLiteDatabase, id: string): Promise<void> {
+  const t = jetztIso();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('UPDATE fotos SET deleted_at = ? WHERE material_id = ? AND deleted_at IS NULL', t, id);
+    await db.runAsync('UPDATE material SET deleted_at = ?, updated_at = ? WHERE id = ?', t, t, id);
+  });
+}
+
+export async function fotosZuMaterial(db: SQLiteDatabase, materialId: string): Promise<Foto[]> {
+  return db.getAllAsync<Foto>('SELECT * FROM fotos WHERE material_id = ? AND deleted_at IS NULL ORDER BY created_at', materialId);
 }
 
 export async function statistikGezeigtLaden(db: SQLiteDatabase): Promise<string | null> {
@@ -312,13 +393,13 @@ export async function fotosZuDurchfuehrungen(db: SQLiteDatabase, eintragId: stri
 
 export async function fotoSpeichern(
   db: SQLiteDatabase,
-  ziel: { eintragId?: string; durchfuehrungId?: string },
+  ziel: { eintragId?: string; durchfuehrungId?: string; materialId?: string },
   datei: string,
 ): Promise<string> {
   const id = neueId();
   await db.runAsync(
-    'INSERT INTO fotos (id, betrieb_id, eintrag_id, durchfuehrung_id, datei, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-    id, betrieb(), ziel.eintragId ?? null, ziel.durchfuehrungId ?? null, datei, jetztIso(),
+    'INSERT INTO fotos (id, betrieb_id, eintrag_id, durchfuehrung_id, material_id, datei, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    id, betrieb(), ziel.eintragId ?? null, ziel.durchfuehrungId ?? null, ziel.materialId ?? null, datei, jetztIso(),
   );
   return id;
 }
@@ -366,7 +447,7 @@ export async function prueferSpeichern(db: SQLiteDatabase, name: string): Promis
 // ---------- Lernende Vorschläge ----------
 // Die App merkt sich, was geschrieben/gesucht wird, und schlägt es wieder vor. Alles nur am Handy.
 
-export type VorschlagFeld = 'beschreibung' | 'mangel' | 'aufgabe' | 'pruefer' | 'suche';
+export type VorschlagFeld = 'beschreibung' | 'mangel' | 'aufgabe' | 'pruefer' | 'suche' | 'material';
 
 const NICHT_LERNEN = new Set(['', 'durchgeführt', 'übernommen beim anlegen des eintrags']);
 

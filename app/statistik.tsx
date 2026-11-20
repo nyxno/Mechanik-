@@ -3,11 +3,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungenImBereich, eintraegeLaden, eintragIntervall, statistikGezeigtSpeichern } from '@/db/repo';
+import { durchfuehrungenImBereich, eintraegeLaden, eintragIntervall, statistikGezeigtSpeichern, zulagenImBereich } from '@/db/repo';
 import type { EintragMitStatus } from '@/db/typen';
 import { formatDeutsch, formatMitTag, heute, zuDate } from '@/lib/datum';
 import { monatsGrenzen, termineImBereich } from '@/lib/kalender';
-import { monatsSchluessel, monatsStatistik, Rangplatz, StatZeile, stundenText } from '@/lib/statistik';
+import { monatsSchluessel, monatsStatistik, Rangplatz, StatZeile, stundenText, TagesZulage } from '@/lib/statistik';
 import { Bildschirm } from '@/components/Bildschirm';
 import { ergebnisFarben, farben, groessen, sz } from '@/theme';
 
@@ -27,6 +27,8 @@ export default function Statistik() {
   const [monat, setMonat] = useState(() => ausParam(param));
   const [zeilen, setZeilen] = useState<StatZeile[]>([]);
   const [vorher, setVorher] = useState<StatZeile[]>([]);
+  const [direkt, setDirekt] = useState<TagesZulage[]>([]);
+  const [direktVorher, setDirektVorher] = useState<TagesZulage[]>([]);
   const [eintraege, setEintraege] = useState<EintragMitStatus[]>([]);
   const [tageOffen, setTageOffen] = useState(false);
 
@@ -34,14 +36,17 @@ export default function Statistik() {
     const g = monatsGrenzen(monat.j, monat.m);
     const vJahr = monat.m === 0 ? monat.j - 1 : monat.j;
     const vg = monatsGrenzen(vJahr, monat.m === 0 ? 11 : monat.m - 1);
-    const [a, b, e] = await Promise.all([durchfuehrungenImBereich(db, g.von, g.bis), durchfuehrungenImBereich(db, vg.von, vg.bis), eintraegeLaden(db)]);
-    setZeilen(a); setVorher(b); setEintraege(e);
+    const [a, b, e, za, zb] = await Promise.all([
+      durchfuehrungenImBereich(db, g.von, g.bis), durchfuehrungenImBereich(db, vg.von, vg.bis), eintraegeLaden(db),
+      zulagenImBereich(db, g.von, g.bis), zulagenImBereich(db, vg.von, vg.bis),
+    ]);
+    setZeilen(a); setVorher(b); setEintraege(e); setDirekt(za); setDirektVorher(zb);
     statistikGezeigtSpeichern(db, monatsSchluessel(monat.j, monat.m)).catch(() => {});
   }, [db, monat.j, monat.m]);
   useFocusEffect(useCallback(() => { laden(); }, [laden]));
 
-  const st = useMemo(() => monatsStatistik(zeilen), [zeilen]);
-  const vst = useMemo(() => monatsStatistik(vorher), [vorher]);
+  const st = useMemo(() => monatsStatistik(zeilen, direkt), [zeilen, direkt]);
+  const vst = useMemo(() => monatsStatistik(vorher, direktVorher), [vorher, direktVorher]);
 
   // Ausblick: was im Folgemonat fällig wird, und offene Mängel
   const ausblick = useMemo(() => {
@@ -82,13 +87,15 @@ export default function Statistik() {
         <Kachel symbol="✓" wert={String(st.arbeiten)} text="Arbeiten erledigt" unter={vergleich(st.arbeiten, vst.arbeiten, vorName, false)} />
       </View>
 
-      {st.arbeiten === 0 ? (
+      {st.direktStunden > 0 ? <Text style={s.hinweis}>davon {stundenText(st.direktStunden)} über die Zulagen-Taste eingetragen</Text> : null}
+
+      {st.arbeiten === 0 && st.stunden === 0 ? (
         <Text style={s.leer}>In diesem Monat wurde noch nichts erfasst.</Text>
       ) : (
         <>
           <Abschnitt titel="📍 Wo am meisten Zulagen (Eintrag)">
             <Rangliste liste={st.proEintrag.filter((r) => r.stunden > 0).slice(0, 6)} wert={(r) => r.stunden} text={(r) => `${stundenText(r.stunden)} · ${r.arbeiten}×`}
-              onPress={(r) => router.push({ pathname: '/eintrag/[id]', params: { id: r.id } })} leer="Keine Zulagenstunden in diesem Monat." />
+              onPress={(r) => router.push({ pathname: '/eintrag/[id]', params: { id: r.id } })} leer="Keine Zulagenstunden bei Arbeiten (nur über die Zulagen-Taste)." />
           </Abschnitt>
 
           <Abschnitt titel="🏷 Nach Gebiet (Arbeiten)">

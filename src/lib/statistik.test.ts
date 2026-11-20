@@ -43,3 +43,33 @@ test('Statistik: Summen, Ranglisten, Wochentage', () => {
   assert.deepEqual(s.staerksterTag, { datum: '2026-11-02', stunden: 3.5 });
   assert.equal(monatsStatistik([]).staerksterTag, null);
 });
+
+import { alsBaum, geschwister, mitUnterkategorien } from './kategorien';
+
+test('Statistik: Stunden über die Zulagen-Taste zählen mit', () => {
+  const s = monatsStatistik([z('2026-11-02', 'a', 'h', 1, 0)], [
+    { datum: '2026-11-02', hitze: 2, staub: 0 },
+    { datum: '2026-11-05', hitze: 0, staub: 1.5 },
+  ]);
+  assert.equal(s.hitze, 3); assert.equal(s.staub, 1.5); assert.equal(s.stunden, 4.5);
+  assert.equal(s.direktStunden, 3.5);
+  assert.equal(s.arbeiten, 1);                 // Zulagen-Taste ist keine Arbeit
+  assert.equal(s.proTag.length, 2);
+  assert.equal(s.tageStaub, 1);
+  assert.deepEqual(s.staerksterTag, { datum: '2026-11-02', stunden: 3 });
+});
+
+test('Unterkategorien: Baum, Filter, Geschwister', () => {
+  const l = [
+    { id: 'h', eltern_id: null, sortierung: 1, name: 'Heizung' },
+    { id: 'b', eltern_id: null, sortierung: 0, name: 'Brandschutz' },
+    { id: 't', eltern_id: 'h', sortierung: 1, name: 'Thermen' },
+    { id: 'k', eltern_id: 'h', sortierung: 0, name: 'Kessel' },
+    { id: 'f', eltern_id: 'b', sortierung: 0, name: 'Feuerlöscher' },
+    { id: 'x', eltern_id: 'weg', sortierung: 5, name: 'Waise' },
+  ];
+  assert.deepEqual(alsBaum(l).map((k) => `${k.ebene}${k.id}`), ['0b', '1f', '0h', '1k', '1t', '0x']);
+  assert.deepEqual([...mitUnterkategorien('h', l)].sort(), ['h', 'k', 't']);
+  assert.deepEqual(geschwister('t', l).map((k) => k.id), ['k', 't']);
+  assert.deepEqual(geschwister('h', l).map((k) => k.id), ['b', 'h']);
+});

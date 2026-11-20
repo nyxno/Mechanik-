@@ -15,12 +15,16 @@ export interface StatZeile {
   staub: number;
 }
 
+/** Stunden, die direkt über die Zulagen-Taste eingetragen wurden (ohne Eintrag). */
+export interface TagesZulage { datum: IsoDatum; hitze: number; staub: number }
+
 export interface Rangplatz { id: string; name: string; farbe: string | null; hitze: number; staub: number; stunden: number; arbeiten: number }
 
 export interface MonatsStatistik {
   hitze: number;
   staub: number;
   stunden: number;          // Hitze + Staub
+  direktStunden: number;    // davon über die Zulagen-Taste
   arbeiten: number;         // erledigte Durchführungen
   arbeitstage: number;      // Tage mit mindestens einer Durchführung
   tageHitze: number;
@@ -48,7 +52,7 @@ function rangliste(zeilen: StatZeile[], schluessel: (z: StatZeile) => { id: stri
     .sort((a, b) => b.stunden - a.stunden || b.arbeiten - a.arbeiten || a.name.localeCompare(b.name, 'de'));
 }
 
-export function monatsStatistik(zeilen: StatZeile[]): MonatsStatistik {
+export function monatsStatistik(zeilen: StatZeile[], direkt: TagesZulage[] = []): MonatsStatistik {
   const proTagMap = new Map<IsoDatum, { datum: IsoDatum; hitze: number; staub: number; arbeiten: number }>();
   const ergebnisse = { ok: 0, maengel: 0, ausser_betrieb: 0 };
   const proWochentag = [0, 0, 0, 0, 0, 0, 0];
@@ -61,6 +65,14 @@ export function monatsStatistik(zeilen: StatZeile[]): MonatsStatistik {
     t.hitze += z.hitze; t.staub += z.staub; t.arbeiten++;
     proTagMap.set(z.datum, t);
   }
+  let direktStunden = 0;
+  for (const d of direkt) {
+    if (d.hitze <= 0 && d.staub <= 0) continue;
+    hitze += d.hitze; staub += d.staub; direktStunden += d.hitze + d.staub;
+    const t = proTagMap.get(d.datum) ?? { datum: d.datum, hitze: 0, staub: 0, arbeiten: 0 };
+    t.hitze += d.hitze; t.staub += d.staub;
+    proTagMap.set(d.datum, t);
+  }
   const proTag = [...proTagMap.values()].sort((a, b) => a.datum.localeCompare(b.datum))
     .map((t) => ({ ...t, hitze: runden(t.hitze), staub: runden(t.staub) }));
   const staerkster = [...proTag].sort((a, b) => (b.hitze + b.staub) - (a.hitze + a.staub))[0];
@@ -68,6 +80,7 @@ export function monatsStatistik(zeilen: StatZeile[]): MonatsStatistik {
     hitze: runden(hitze),
     staub: runden(staub),
     stunden: runden(hitze + staub),
+    direktStunden: runden(direktStunden),
     arbeiten: zeilen.length,
     arbeitstage: proTag.length,
     tageHitze: proTag.filter((t) => t.hitze > 0).length,

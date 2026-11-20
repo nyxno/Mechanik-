@@ -70,6 +70,11 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
     setEinmalig(e);
     if (e && !naechster) setNaechster(heuteOderMontag(heute()));
   };
+  // Unterkategorien: erst Hauptkategorie wählen, darunter erscheinen ihre Unterkategorien
+  const haupt = kategorien.filter((k) => !k.eltern_id || !kategorien.some((x) => x.id === k.eltern_id));
+  const gewaehlt = kategorien.find((k) => k.id === kategorieId);
+  const hauptId = gewaehlt ? (haupt.some((h) => h.id === gewaehlt.id) ? gewaehlt.id : gewaehlt.eltern_id) : null;
+  const unter = hauptId ? kategorien.filter((k) => k.eltern_id === hauptId) : [];
   const vorschlagKategorie = vorschlag ? kategorien.find((k) => k.id === vorschlag.kategorie_id) : null;
   const mehrUebernehmbar = !!vorschlag && (vorschlag.einmalig || !!vorschlag.intervall || !!vorschlag.aufgabe) && !vorschlagUebernommen;
 
@@ -113,17 +118,20 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
   return (
     <View>
       <Text style={s.label}>Kategorie</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} style={{ marginBottom: groessen.abstand }}>
-        {kategorien.map((k) => {
-          const aktiv = k.id === kategorieId;
-          return (
-            <Pressable key={k.id} onPress={() => { setKategorieId(k.id); setKategorieVonHand(true); }}
-              style={[s.chip, k.farbe ? { borderColor: k.farbe } : null, aktiv && { backgroundColor: k.farbe ?? farben.primaer, borderColor: k.farbe ?? farben.primaer }]}>
-              <Text style={[s.chipText, aktiv && { color: textFarbe(k.farbe ?? farben.primaer) }]}>{k.name}</Text>
-            </Pressable>
-          );
-        })}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} style={{ marginBottom: unter.length ? 8 : groessen.abstand }}>
+        {haupt.map((k) => (
+          <KatChip key={k.id} k={k} aktiv={k.id === hauptId} text={`${k.name}${kategorien.some((x) => x.eltern_id === k.id) ? ' ▾' : ''}`}
+            onPress={() => { setKategorieId(k.id); setKategorieVonHand(true); }} />
+        ))}
       </ScrollView>
+      {unter.length ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} style={{ marginBottom: groessen.abstand }}>
+          {unter.map((k) => (
+            <KatChip key={k.id} k={k} aktiv={k.id === kategorieId} text={`↳ ${k.name}`}
+              onPress={() => { setKategorieId(k.id === kategorieId ? hauptId! : k.id); setKategorieVonHand(true); }} />
+          ))}
+        </ScrollView>
+      ) : null}
 
       <Eingabe label="Name" value={name} onChangeText={setName} placeholder="z. B. Therme Halle 2" />
       {vorschlag && vorschlagKategorie ? (
@@ -212,4 +220,13 @@ export function wochenendHinweis(iso: string | null): string | null {
   const t = wochentag(iso);
   if (t !== 6 && t !== 0) return null;
   return `⚠ Fällt auf ${t === 6 ? 'Samstag' : 'Sonntag'} – Termin wird ${formatMitTag(aufWerktag(iso))}.`;
+}
+
+function KatChip({ k, aktiv, text, onPress }: { k: Kategorie; aktiv: boolean; text: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress}
+      style={[s.chip, k.farbe ? { borderColor: k.farbe } : null, aktiv && { backgroundColor: k.farbe ?? farben.primaer, borderColor: k.farbe ?? farben.primaer }]}>
+      <Text style={[s.chipText, aktiv && { color: textFarbe(k.farbe ?? farben.primaer) }]}>{text}</Text>
+    </Pressable>
+  );
 }

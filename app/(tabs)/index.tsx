@@ -4,7 +4,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import {
-  durchfuehrungAnlegen, durchfuehrungRueckgaengig, eintraegeLaden, eintragFaelligkeit, hinweiseLaden, kategorienLaden,
+  durchfuehrungAnlegen, durchfuehrungRueckgaengig, eintraegeLaden, eintragFaelligkeit, hinweiseLaden, kategorienLaden, materialLaden,
   prueferLaden, Rueckgaengig, vorschlagLernen,
 } from '@/db/repo';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
@@ -12,6 +12,7 @@ import type { EintragMitStatus, Kategorie } from '@/db/typen';
 import { sortierWert, Status } from '@/lib/faelligkeit';
 import { heute, plusMonate } from '@/lib/datum';
 import { textFarbe } from '@/lib/farben';
+import { mitUnterkategorien } from '@/lib/kategorien';
 import { EintragKarte } from '@/components/EintragKarte';
 import { RueckgaengigLeiste } from '@/components/RueckgaengigLeiste';
 import { Taste } from '@/components/Taste';
@@ -29,6 +30,7 @@ export default function Uebersicht() {
   const [spaeterZeigen, setSpaeterZeigen] = useState(false);
   const [anzahlHinweise, setAnzahlHinweise] = useState(0);
   const [okOffen, setOkOffen] = useState(false);
+  const [materialOffen, setMaterialOffen] = useState(0);
   const pruefer = useRef('');
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -38,6 +40,7 @@ export default function Uebersicht() {
     setKategorien(k);
     pruefer.current = p;
     hinweiseLaden(db).then((x) => setAnzahlHinweise(x.hinweise.length)).catch(() => {});
+    materialLaden(db).then((l) => setMaterialOffen(l.filter((m) => !m.besorgt).length)).catch(() => {});
   }, [db]);
 
   // Jedes Mal neu laden, wenn man auf diese Seite zurückkommt.
@@ -50,17 +53,23 @@ export default function Uebersicht() {
   // Unter "Alle" ohne Suche: nur was in den nächsten 3 Monaten fällig wird (+ Überfälliges / noch nie gemacht).
   const grenze = plusMonate(h, 3);
   const nurNaechsteMonate = !filterKategorie && !suche.trim();
+  // Filter: Hauptkategorie zeigt auch ihre Unterkategorien
+  const filterIds = useMemo(() => (filterKategorie ? mitUnterkategorien(filterKategorie, kategorien) : null), [filterKategorie, kategorien]);
+  const hauptKategorien = kategorien.filter((k) => !k.eltern_id || !kategorien.some((x) => x.id === k.eltern_id));
+  const gewaehlt = kategorien.find((k) => k.id === filterKategorie);
+  const offeneHaupt = gewaehlt ? (gewaehlt.eltern_id && kategorien.some((x) => x.id === gewaehlt.eltern_id) ? kategorien.find((x) => x.id === gewaehlt.eltern_id)! : gewaehlt) : null;
+  const unterKategorien = offeneHaupt ? kategorien.filter((k) => k.eltern_id === offeneHaupt.id) : [];
   const { liste, spaeter } = useMemo(() => {
     const s = suche.trim().toLowerCase();
     const passend = alle
       .filter((x) => x.f.status !== 'erledigt')
-      .filter((x) => !filterKategorie || x.e.kategorie_id === filterKategorie)
+      .filter((x) => !filterIds || filterIds.has(x.e.kategorie_id))
       .filter(({ e }) => !s || e.name.toLowerCase().includes(s) || e.aufgabe.toLowerCase().includes(s) || e.zusatzinfo.toLowerCase().includes(s) || e.kategorie_name.toLowerCase().includes(s))
       .sort((a, b) => sortierWert(a.f) - sortierWert(b.f) || a.e.name.localeCompare(b.e.name, 'de'));
     if (!nurNaechsteMonate || spaeterZeigen) return { liste: passend, spaeter: 0 };
     const nah = passend.filter((x) => !x.f.naechster || x.f.naechster <= grenze);
     return { liste: nah, spaeter: passend.length - nah.length };
-  }, [alle, filterKategorie, suche, nurNaechsteMonate, spaeterZeigen, grenze]);
+  }, [alle, filterIds, suche, nurNaechsteMonate, spaeterZeigen, grenze]);
 
   // "In Ordnung" (grün) zusammenklappen – außer bei Suche oder Kategorie-Filter
   type Zeile = { typ: 'eintrag'; e: EintragMitStatus } | { typ: 'ok'; anzahl: number };
@@ -77,9 +86,9 @@ export default function Uebersicht() {
 
   const zaehler = useMemo(() => {
     const z: Record<Status, number> = { ueberfaellig: 0, nie: 0, bald: 0, ok: 0, erledigt: 0 };
-    for (const { e, f } of alle) if (!filterKategorie || e.kategorie_id === filterKategorie) z[f.status]++;
+    for (const { e, f } of alle) if (!filterIds || filterIds.has(e.kategorie_id)) z[f.status]++;
     return z;
-  }, [alle, filterKategorie]);
+  }, [alle, filterIds]);
 
   const schnellErledigt = async (e: EintragMitStatus) => {
     const r = await durchfuehrungAnlegen(db, {
@@ -115,15 +124,21 @@ export default function Uebersicht() {
         <Zaehler farbe={farben.gruen} zahl={zaehler.ok} text="in Ordnung" />
       </View>
       <View style={s.reihe}>
-        {anzahlHinweise > 0 ? (
-          <Pressable onPress={() => router.push('/hinweise')} style={({ pressed }) => [s.hinweis, { flex: 1 }, pressed && { opacity: 0.7 }]}>
-            <Text style={s.hinweisText}>💡 {anzahlHinweise === 1 ? '1 Hinweis' : `${anzahlHinweise} Hinweise`}</Text>
-          </Pressable>
-        ) : null}
-        <Pressable onPress={() => router.push('/erledigt')} style={({ pressed }) => [s.erledigt, anzahlHinweise === 0 && { flex: 1 }, pressed && { opacity: 0.7 }]}>
-          <Text style={s.erledigtText}>✅ Erledigt ({anzahlErledigt})</Text>
+        <Pressable onPress={() => router.push('/zulagen')} style={({ pressed }) => [s.knopf, s.zulagen, pressed && { opacity: 0.7 }]}>
+          <Text style={[s.knopfText, { color: '#fff' }]}>⏱ Zulagen</Text>
+        </Pressable>
+        <Pressable onPress={() => router.push('/material')} style={({ pressed }) => [s.knopf, pressed && { opacity: 0.7 }]}>
+          <Text style={s.knopfText}>📦 Material{materialOffen ? ` (${materialOffen})` : ''}</Text>
+        </Pressable>
+        <Pressable onPress={() => router.push('/erledigt')} style={({ pressed }) => [s.knopf, s.erledigt, { flex: 0.7 }, pressed && { opacity: 0.7 }]}>
+          <Text style={s.erledigtText}>✅ {anzahlErledigt}</Text>
         </Pressable>
       </View>
+      {anzahlHinweise > 0 ? (
+        <Pressable onPress={() => router.push('/hinweise')} style={({ pressed }) => [s.hinweis, pressed && { opacity: 0.7 }]}>
+          <Text style={s.hinweisText}>💡 {anzahlHinweise === 1 ? '1 Hinweis' : `${anzahlHinweise} Hinweise`} – die App hat Muster erkannt</Text>
+        </Pressable>
+      ) : null}
       <TextInput
         value={suche}
         onChangeText={setSuche}
@@ -138,13 +153,22 @@ export default function Uebersicht() {
       <VorschlagLeiste feld="suche" eingabe={suche} sichtbar={sucheFokus} onWahl={setSuche} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
         <Chip aktiv={!filterKategorie} text="Alle" onPress={() => setFilterKategorie(null)} />
-        {kategorien.map((k) => (
-          <Chip key={k.id} aktiv={filterKategorie === k.id} text={k.name} farbe={k.farbe} onPress={() => setFilterKategorie(filterKategorie === k.id ? null : k.id)} />
+        {hauptKategorien.map((k) => (
+          <Chip key={k.id} aktiv={offeneHaupt?.id === k.id} text={`${k.name}${kategorien.some((x) => x.eltern_id === k.id) ? ' ▾' : ''}`} farbe={k.farbe}
+            onPress={() => setFilterKategorie(offeneHaupt?.id === k.id ? null : k.id)} />
         ))}
         <Link href="/kategorien" asChild>
           <Pressable style={[s.chip, s.chipKategorien]}><Text style={s.chipText}>⚙ Kategorien</Text></Pressable>
         </Link>
       </ScrollView>
+      {offeneHaupt && unterKategorien.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
+          <Chip aktiv={filterKategorie === offeneHaupt.id} text={`Alle ${offeneHaupt.name}`} farbe={offeneHaupt.farbe} onPress={() => setFilterKategorie(offeneHaupt.id)} />
+          {unterKategorien.map((k) => (
+            <Chip key={k.id} aktiv={filterKategorie === k.id} text={`↳ ${k.name}`} farbe={k.farbe} onPress={() => setFilterKategorie(k.id)} />
+          ))}
+        </ScrollView>
+      ) : null}
     </View>
   );
 
@@ -229,7 +253,10 @@ const s = StyleSheet.create({
   chip: { backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, borderRadius: 999, paddingHorizontal: 16, minHeight: 48, justifyContent: 'center' },
   chipReihe: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   chipPunkt: { width: 12, height: 12, borderRadius: 6 },
-  erledigt: { backgroundColor: farben.gruenHell, borderWidth: 2, borderColor: farben.gruen, borderRadius: groessen.radius, paddingHorizontal: 14, minHeight: 52, justifyContent: 'center', alignItems: 'center' },
+  knopf: { flex: 1, minHeight: groessen.tasteHoeheKlein, borderRadius: groessen.radius, borderWidth: 2, borderColor: farben.rahmen, backgroundColor: farben.karte, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  knopfText: { fontSize: groessen.schriftKlein, fontWeight: '800', color: farben.text, textAlign: 'center' },
+  zulagen: { backgroundColor: '#EA580C', borderColor: '#EA580C' },
+  erledigt: { backgroundColor: farben.gruenHell, borderColor: farben.gruen },
   erledigtText: { fontSize: groessen.schrift, fontWeight: '700', color: farben.gruen },
   okZeile: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: farben.gruenHell, borderWidth: 2, borderColor: farben.gruen, borderRadius: groessen.radius, paddingHorizontal: 16, minHeight: groessen.tasteHoehe, marginBottom: 12 },
   okText: { fontSize: groessen.schrift, fontWeight: '800', color: farben.gruen },

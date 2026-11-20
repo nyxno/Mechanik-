@@ -3,12 +3,14 @@ import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungenLaden, durchfuehrungLoeschen, eintragFaelligkeit, eintragIntervall, eintragLaden, eintragSchlummern, einstellungenLaden, fotosZuDurchfuehrungen, fotosZuEintrag, mangelBehoben } from '@/db/repo';
+import { durchfuehrungenLaden, durchfuehrungLoeschen, eintragFaelligkeit, eintragIntervall, eintragLaden, eintragSchlummern, einstellungenLaden, fotosZuDurchfuehrungen, fotosZuEintrag, mangelBehoben, materialBesorgt, materialLaden } from '@/db/repo';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import type { Durchfuehrung, EintragMitStatus, Foto } from '@/db/typen';
 import { intervallText } from '@/lib/intervall';
 import { wiederkehrendeMaengel } from '@/lib/muster';
 import { stundenText } from '@/lib/statistik';
+import type { Material } from '@/db/typen';
+import { MaterialZeile } from '@/components/MaterialZeile';
 import { GebietMarke } from '@/components/EintragKarte';
 import { formatDeutsch, formatMitTag, heute, schlummerZiel } from '@/lib/datum';
 import { fotoDateiLoeschen } from '@/lib/fotos';
@@ -28,10 +30,12 @@ export default function EintragDetail() {
   const [verlaufFotos, setVerlaufFotos] = useState<Foto[]>([]);
   const [ansicht, setAnsicht] = useState<string | null>(null);
   const [standardUhrzeit, setStandardUhrzeit] = useState('07:00');
+  const [material, setMaterial] = useState<Material[]>([]);
 
   const laden = useCallback(async () => {
     const [e, f, v, vf, ein] = await Promise.all([eintragLaden(db, id), fotosZuEintrag(db, id), durchfuehrungenLaden(db, id), fotosZuDurchfuehrungen(db, id), einstellungenLaden(db)]);
     setEintrag(e); setFotos(f); setVerlauf(v); setVerlaufFotos(vf); setStandardUhrzeit(ein.uhrzeit);
+    setMaterial(await materialLaden(db, id));
   }, [db, id]);
   useFocusEffect(useCallback(() => { laden(); }, [laden]));
 
@@ -139,6 +143,12 @@ export default function EintragDetail() {
       {eintrag.zusatzinfo ? <Abschnitt titel="Zusatzinfo" text={eintrag.zusatzinfo} /> : null}
 
       <FotoLeiste titel="Fotos" dateien={fotos.map((x) => x.datei)} onAnsehen={setAnsicht} />
+
+      <Text style={s.abschnittTitel}>📦 Material ({material.filter((m) => !m.besorgt).length} offen)</Text>
+      {material.map((m) => (
+        <MaterialZeile key={m.id} m={m} zeigeGeraet={false} onAbhaken={async (x) => { await materialBesorgt(db, x.id, !x.besorgt); laden(); }} />
+      ))}
+      <Taste titel="＋ Material für dieses Gerät" onPress={() => router.push({ pathname: '/material/[id]', params: { id: 'neu', eintragId: id } })} art="sekundaer" klein style={{ marginBottom: 20 }} />
 
       <Text style={s.abschnittTitel}>Verlauf ({verlauf.length})</Text>
       {verlauf.length === 0 ? <Text style={s.klein}>Noch keine Durchführung erfasst.</Text> : null}
