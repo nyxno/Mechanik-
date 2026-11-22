@@ -10,7 +10,7 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 „Übernahme in die nächste Runde“ und wird dort zuerst erledigt.
 
 ## Übernahme in die nächste Runde
-- (nichts offen)
+- Fotos in die Sicherung aufnehmen (z. B. als ZIP) – derzeit nur Daten.
 
 ## Runde 1 – 22.11.2026, 22:22 (Version 0.9)
 
@@ -41,4 +41,14 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 **Neu**
 - **Fotos direkt beim Gerät:** Auf der Geräteseite gibt es jetzt „📷 Kamera“ und „🖼 Galerie“ –
   kein Umweg über „Bearbeiten“ mehr.
+
+## Runde 3 – 23.11.2026, 0:22 (Version 0.11)
+
+**Neu (wichtigster offener Punkt): Datensicherung**
+- Einstellungen → **„💾 Sicherung erstellen“**: alle Daten als eine Datei; Android fragt, wohin
+  (z. B. Google Drive, E-Mail an dich selbst, Downloads).
+- **„📥 Sicherung einspielen“**: Datei auswählen → nach Rückfrage werden die Daten wiederhergestellt
+  (z. B. auf einem neuen Handy). Sicherungen aus älteren App-Versionen funktionieren.
+- Anzeige **„Letzte Sicherung: …“** bzw. Warnung „Noch nie gesichert“.
+- Hinweis: **Fotos sind noch nicht in der Sicherung** – kommt in einer späteren Runde.
 

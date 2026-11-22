@@ -5,7 +5,9 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { einstellungenLaden, einstellungenSpeichern, prueferLaden, prueferSpeichern, schriftFaktorSpeichern } from '@/db/repo';
 import { router } from 'expo-router';
+import { formatDeutsch } from '@/lib/datum';
 import { testdatenAnlegen } from '@/dev/testdaten';
+import { letzteSicherung, Sicherung, sicherungAuswaehlen, sicherungEinspielen, sicherungErstellen, sicherungPruefen } from '@/lib/sicherung';
 import { Eingabe } from '@/components/Eingabe';
 import type { ErinnerungsEinstellungen } from '@/lib/erinnerungsplan';
 import { berechtigungAnfragen, berechtigungStatus, erinnerungenNeuPlanen, genaueUhrzeitErlauben, testErinnerung } from '@/lib/erinnerungen';
@@ -30,10 +32,12 @@ export default function Einstellungen() {
   const [geplant, setGeplant] = useState<number | null>(null);
   const [pruefer, setPruefer] = useState('');
   const [schrift, setSchrift] = useState(SCHRIFT_FAKTOR);
+  const [gesichert, setGesichert] = useState<string | null>(null);
 
   const laden = useCallback(async () => {
     setE(await einstellungenLaden(db));
     setPruefer(await prueferLaden(db));
+    setGesichert(await letzteSicherung(db));
     setStatus(await berechtigungStatus());
     setGeplant(await erinnerungenNeuPlanen(db));
   }, [db]);
@@ -60,6 +64,35 @@ export default function Einstellungen() {
         hinweis="Wird bei jeder Durchführung automatisch eingetragen (änderbar)."
       />
  <Taste titel="📊 Monatsstatistik" onPress={() => router.push('/statistik')} art="sekundaer" klein style={{ marginBottom: 10 }} />
+      <Taste titel="💾 Sicherung erstellen" art="sekundaer" klein style={{ marginBottom: 10 }} onPress={async () => {
+        try {
+          const r = await sicherungErstellen(db);
+          laden();
+          Alert.alert('Sicherung erstellt', `${r.anzahl} Datensätze gesichert. Speichere die Datei z. B. in Google Drive oder schick sie dir per E-Mail.\n\nHinweis: Fotos sind nicht enthalten.`);
+        } catch (e) { Alert.alert('Sicherung fehlgeschlagen', String(e)); }
+      }} />
+      <Text style={[s.hinweis, { marginTop: -4 }, !gesichert && { color: farben.gelb, fontWeight: '700' }]}>
+        {gesichert ? `Letzte Sicherung: ${formatDeutsch(gesichert)}` : '⚠ Noch nie gesichert – empfohlen, einmal im Monat.'}
+      </Text>
+      <Taste titel="📥 Sicherung einspielen" art="sekundaer" klein style={{ marginBottom: 10 }} onPress={async () => {
+        try {
+          const daten = await sicherungAuswaehlen();
+          if (!daten) return;
+          const v = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+          const fehler = sicherungPruefen(daten, v?.user_version ?? 0);
+          if (fehler) return Alert.alert('Kann nicht eingespielt werden', fehler);
+          const s = daten as Sicherung;
+          Alert.alert('Sicherung einspielen?', `Stand: ${new Date(s.erstellt).toLocaleString('de-DE')}\n\nACHTUNG: Alle aktuellen Daten in der App werden durch die Sicherung ersetzt.`, [
+            { text: 'Abbrechen', style: 'cancel' },
+            { text: 'Ersetzen', style: 'destructive', onPress: async () => {
+              const n = await sicherungEinspielen(db, s);
+              await erinnerungenNeuPlanen(db);
+              laden();
+              Alert.alert('Fertig', `${n} Datensätze eingespielt.`);
+            } },
+          ]);
+        } catch (e) { Alert.alert('Fehler beim Einspielen', String(e)); }
+      }} />
       <Taste titel="🏷 Kategorien & Farben verwalten" onPress={() => router.push('/kategorien')} art="sekundaer" klein style={{ marginBottom: groessen.abstand }} />
 
       <Text style={s.label}>🔠 Schriftgröße</Text>

@@ -5,7 +5,7 @@ Thermen, Heizungen, Leitern, Feuerlöscher, Anschlagmittel, Druckbehälter, Masc
 
 Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 
-## Was die App kann (Version 0.8)
+## Was die App kann (Version 0.11)
 
 - **Kategorien** anlegen, umbenennen, löschen (z. B. Heizung, Brandschutz, Leitern)
 - **Einträge** je Kategorie: Name, Aufgabe, Intervall (frei wählbar), Zusatzinfo, Fotos
@@ -45,6 +45,7 @@ Alles auf Deutsch, große Tasten, funktioniert komplett **ohne Internet**.
 - **Kalender-Tagesansicht**: Tag antippen → was erledigt wurde, Zulagen, was geplant war
 - **Hinweise ausblenden**
 - **Zulagen nachträglich** bei jeder erledigten Arbeit (im Verlauf antippen, oder nach „Heute erledigt“)
+- **💾 Datensicherung**: Sicherung erstellen (teilen/speichern) und wieder einspielen (ohne Fotos)
 - **📦 Materialliste** mit Fotos, Menge, Notiz, Zuordnung zum Gerät, abhaken wie eine Einkaufsliste
 
 Noch nicht enthalten: Benutzerkonten, Abgleich zwischen Geräten, PDF-Export.
