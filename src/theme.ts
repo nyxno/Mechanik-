@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { openDatabaseSync } from 'expo-sqlite';
 import { DB_NAME } from './db/schema';
 // Farben und Größen an einem Ort. Große Tasten und Schrift: bedienbar mit Handschuhen.
@@ -29,6 +30,7 @@ export const SCHRIFT_STUFEN = [
 ];
 
 function schriftFaktorLesen(): number {
+  if (Platform.OS === 'web') return 1; // Browser-Vorschau: Datenbank wird dort nur einmal geöffnet
   try {
     const db = openDatabaseSync(DB_NAME);
     const r = db.getFirstSync<{ wert: string }>("SELECT wert FROM einstellungen WHERE schluessel = 'schrift_faktor'");

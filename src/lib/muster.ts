@@ -15,6 +15,12 @@ export function woerter(text: string): string[] {
   return text.toLowerCase().split(/[^a-zäöüß]+/).filter((w) => w.length >= 3 && !FUELLWOERTER.has(w));
 }
 
+/** Ortsangaben zählen bei der Zuordnung nicht ("Therme Büro" ist eine Therme, kein Büro-Gerät). */
+const ORTSWOERTER = new Set(['halle', 'gebäude', 'gebaeude', 'haus', 'bau', 'keller', 'werkstatt', 'lager', 'büro', 'buero',
+  'raum', 'etage', 'stockwerk', 'hof', 'garage', 'kunde', 'filiale', 'werk', 'technikraum', 'heizraum', 'links', 'rechts',
+  'oben', 'unten', 'tor', 'eingang', 'standort', 'nord', 'süd', 'ost', 'west']);
+const sachWoerter = (text: string) => woerter(text).filter((w) => !ORTSWOERTER.has(w));
+
 /** Wortstamm (grob): die ersten 5 Buchstaben – "Thermen" und "Therme" passen so zusammen. */
 const stamm = (w: string) => w.slice(0, 5);
 
@@ -51,14 +57,14 @@ const WOERTERBUCH: Record<string, string[]> = {
 };
 
 export function zuordnungVorschlag(name: string, eintraege: VorbildEintrag[], kategorien: KategorieKurz[]): ZuordnungsVorschlag | null {
-  const neu = woerter(name).map(stamm);
+  const neu = sachWoerter(name).map(stamm);
   if (neu.length === 0) return null;
 
   // a) Ähnlichster eigener Eintrag (gemeinsame Wortstämme)
   let bester: VorbildEintrag | null = null;
   let besterWert = 0;
   for (const e of eintraege) {
-    const alt = new Set(woerter(e.name).map(stamm));
+    const alt = new Set(sachWoerter(e.name).map(stamm));
     const treffer = neu.filter((w) => alt.has(w)).length;
     if (treffer > besterWert) { besterWert = treffer; bester = e; }
   }

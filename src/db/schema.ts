@@ -8,6 +8,7 @@
 //  - deleted_at statt echtem Löschen ("Soft Delete"): gelöschte Zeilen bleiben markiert,
 //    damit das Löschen beim Abgleich auch auf andere Geräte übertragen werden kann.
 //  - synced_at: wann die Zeile zuletzt zum Server übertragen wurde (noch unbenutzt).
+import { Platform } from 'react-native';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { ALTE_FARBEN, GEBIETSFARBEN } from '@/lib/farben';
 
@@ -23,8 +24,9 @@ export async function migrieren(db: SQLiteDatabase): Promise<void> {
   if (version >= DB_VERSION) return;
 
   if (version === 0) {
+    // Schnellerer, sicherer Schreibmodus am Handy (im Browser nicht verfügbar)
+    if (Platform.OS !== 'web') await db.execAsync('PRAGMA journal_mode = WAL;');
     await db.execAsync(`
-      PRAGMA journal_mode = WAL;
       PRAGMA foreign_keys = ON;
 
       CREATE TABLE IF NOT EXISTS betriebe (

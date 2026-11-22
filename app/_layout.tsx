@@ -1,8 +1,8 @@
 import { Suspense, useEffect } from 'react';
-import { ActivityIndicator, Alert, AppState, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Platform, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
+import { SQLiteDatabase, SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import * as Notifications from 'expo-notifications';
 import { DB_NAME, migrieren } from '@/db/schema';
 import { AKTION_SCHLUMMERN, berechtigungAnfragen, erinnerungenEinrichten, erinnerungenNeuPlanen } from '@/lib/erinnerungen';
@@ -21,6 +21,14 @@ function Laden() {
 }
 
 let statistikGeoeffnet: string | null = null;
+
+// Browser-Vorschau (nur Entwicklung): Datenbank im Speicher, mit Testdaten gefüllt. Am Handy ohne Wirkung.
+const VORSCHAU = Platform.OS === 'web' && __DEV__;
+async function vorschauStart(db: SQLiteDatabase) {
+  await migrieren(db);
+  const { testdatenAnlegen } = await import('@/dev/testdaten');
+  await testdatenAnlegen(db);
+}
 
 /** Richtet Erinnerungen ein, plant sie neu und öffnet den Eintrag, wenn eine Meldung angetippt wird. */
 function ErinnerungsSteuerung() {
@@ -76,7 +84,7 @@ function ErinnerungsSteuerung() {
       if (r.actionIdentifier === AKTION_SCHLUMMERN) schlummern(r.notification);
       else if (r.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) oeffnen(r.notification);
     };
-    const letzte = Notifications.getLastNotificationResponse();
+    const letzte = Platform.OS === 'web' ? null : Notifications.getLastNotificationResponse();
     if (letzte?.notification) {
       setTimeout(() => antwort(letzte), 300);
       Notifications.clearLastNotificationResponse();
@@ -91,7 +99,7 @@ function ErinnerungsSteuerung() {
 export default function RootLayout() {
   return (
     <Suspense fallback={<Laden />}>
-      <SQLiteProvider databaseName={DB_NAME} onInit={migrieren} useSuspense>
+      <SQLiteProvider databaseName={VORSCHAU ? ':memory:' : DB_NAME} onInit={VORSCHAU ? vorschauStart : migrieren} useSuspense>
         <StatusBar style="dark" />
         <ErinnerungsSteuerung />
         <Stack

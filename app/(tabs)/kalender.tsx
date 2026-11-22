@@ -109,7 +109,7 @@ export default function Kalender() {
         <View style={s.modal}>
           <View style={s.modalKopf}>
             <Pressable onPress={() => tag && tagWechseln(-1)} style={({ pressed }) => [s.pfeil, pressed && { opacity: 0.6 }]}><Text style={s.pfeilText}>◀</Text></Pressable>
-            <View style={{ flex: 1 }} />
+            <Text style={[s.titel, { flex: 1, textAlign: 'center', fontSize: groessen.schriftGross }]}>{tag ? (tag === h ? 'Heute' : formatMitTag(tag)) : ''}</Text>
             <Pressable onPress={() => tag && tagWechseln(1)} style={({ pressed }) => [s.pfeil, pressed && { opacity: 0.6 }]}><Text style={s.pfeilText}>▶</Text></Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: groessen.abstand, paddingBottom: 24 }}>
@@ -143,12 +143,14 @@ export default function Kalender() {
               })}
                 {(zulagenProTag.get(tag!)?.hitze ?? 0) + (zulagenProTag.get(tag!)?.staub ?? 0) > 0 ? (
                   <View style={s.zulagenBox}>
-                    <Text style={s.erledigtName}>⏱ Zulagen-Taste</Text>
+                    <Text style={s.erledigtName}>⏱ Zulagen (direkt eingetragen)</Text>
                     <Text style={s.erledigtInfo}>
                       🔥 Hitze {stundenText(zulagenProTag.get(tag!)!.hitze)}   🌫 Staub {stundenText(zulagenProTag.get(tag!)!.staub)}
                     </Text>
                   </View>
                 ) : null}
+              <Taste titel={`⏱ Zulagen für ${tag === h ? 'heute' : 'diesen Tag'} eintragen`} art="sekundaer" klein style={{ marginTop: 10 }}
+                onPress={() => { setOffen(false); router.push({ pathname: '/zulagen', params: { tag: tag! } }); }} />
               <Text style={s.abschnitt}>{tag === h ? '📅 Noch geplant' : '❗ Damals fällig (überfällig)'}</Text>
             </>
           ) : <Text style={s.abschnitt}>📅 Geplant</Text>}

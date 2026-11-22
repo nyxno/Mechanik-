@@ -1,7 +1,7 @@
 // Startseite: alle offenen Einträge nach Fälligkeit sortiert, mit Ampelfarben, Kategorie-Filter und Suche.
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Link, router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import {
   durchfuehrungAnlegen, durchfuehrungRueckgaengig, eintraegeLaden, eintragFaelligkeit, hinweiseLaden, kategorienLaden, materialLaden,
@@ -33,6 +33,8 @@ export default function Uebersicht() {
   const [okOffen, setOkOffen] = useState(false);
   const [materialOffen, setMaterialOffen] = useState(0);
   const [zulagenZiel, setZulagenZiel] = useState<ZulagenZiel | null>(null);
+  // Ampel antippen = nur diese Farbe zeigen
+  const [ampel, setAmpel] = useState<'rot' | 'gelb' | 'gruen' | null>(null);
   const pruefer = useRef('');
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -54,7 +56,7 @@ export default function Uebersicht() {
 
   // Unter "Alle" ohne Suche: nur was in den nächsten 3 Monaten fällig wird (+ Überfälliges / noch nie gemacht).
   const grenze = plusMonate(h, 3);
-  const nurNaechsteMonate = !filterKategorie && !suche.trim();
+  const nurNaechsteMonate = !filterKategorie && !suche.trim() && !ampel;
   // Filter: Hauptkategorie zeigt auch ihre Unterkategorien
   const filterIds = useMemo(() => (filterKategorie ? mitUnterkategorien(filterKategorie, kategorien) : null), [filterKategorie, kategorien]);
   const hauptKategorien = kategorien.filter((k) => !k.eltern_id || !kategorien.some((x) => x.id === k.eltern_id));
@@ -66,12 +68,13 @@ export default function Uebersicht() {
     const passend = alle
       .filter((x) => x.f.status !== 'erledigt')
       .filter((x) => !filterIds || filterIds.has(x.e.kategorie_id))
+      .filter((x) => !ampel || (ampel === 'rot' ? x.f.status === 'ueberfaellig' || x.f.status === 'nie' : ampel === 'gelb' ? x.f.status === 'bald' : x.f.status === 'ok'))
       .filter(({ e }) => !s || e.name.toLowerCase().includes(s) || e.aufgabe.toLowerCase().includes(s) || e.zusatzinfo.toLowerCase().includes(s) || e.kategorie_name.toLowerCase().includes(s))
       .sort((a, b) => sortierWert(a.f) - sortierWert(b.f) || a.e.name.localeCompare(b.e.name, 'de'));
     if (!nurNaechsteMonate || spaeterZeigen) return { liste: passend, spaeter: 0 };
     const nah = passend.filter((x) => !x.f.naechster || x.f.naechster <= grenze);
     return { liste: nah, spaeter: passend.length - nah.length };
-  }, [alle, filterIds, suche, nurNaechsteMonate, spaeterZeigen, grenze]);
+  }, [alle, filterIds, ampel, suche, nurNaechsteMonate, spaeterZeigen, grenze]);
 
   // "In Ordnung" (grün) zusammenklappen – außer bei Suche oder Kategorie-Filter
   type Zeile = { typ: 'eintrag'; e: EintragMitStatus } | { typ: 'ok'; anzahl: number };
@@ -121,9 +124,9 @@ export default function Uebersicht() {
   const kopf = (
     <View style={s.kopf}>
       <View style={s.ampel}>
-        <Zaehler farbe={farben.rot} zahl={zaehler.ueberfaellig + zaehler.nie} text="überfällig" />
-        <Zaehler farbe={farben.gelb} zahl={zaehler.bald} text="bald" />
-        <Zaehler farbe={farben.gruen} zahl={zaehler.ok} text="in Ordnung" />
+        <Zaehler farbe={farben.rot} zahl={zaehler.ueberfaellig + zaehler.nie} text="überfällig" aktiv={ampel === 'rot'} aus={!!ampel && ampel !== 'rot'} onPress={() => setAmpel(ampel === 'rot' ? null : 'rot')} />
+        <Zaehler farbe={farben.gelb} zahl={zaehler.bald} text="bald" aktiv={ampel === 'gelb'} aus={!!ampel && ampel !== 'gelb'} onPress={() => setAmpel(ampel === 'gelb' ? null : 'gelb')} />
+        <Zaehler farbe={farben.gruen} zahl={zaehler.ok} text="in Ordnung" aktiv={ampel === 'gruen'} aus={!!ampel && ampel !== 'gruen'} onPress={() => setAmpel(ampel === 'gruen' ? null : 'gruen')} />
       </View>
       <View style={s.reihe}>
         <Pressable onPress={() => router.push('/zulagen')} style={({ pressed }) => [s.knopf, s.zulagen, pressed && { opacity: 0.7 }]}>
@@ -159,9 +162,7 @@ export default function Uebersicht() {
           <Chip key={k.id} aktiv={offeneHaupt?.id === k.id} text={`${k.name}${kategorien.some((x) => x.eltern_id === k.id) ? ' ▾' : ''}`} farbe={k.farbe}
             onPress={() => setFilterKategorie(offeneHaupt?.id === k.id ? null : k.id)} />
         ))}
-        <Link href="/kategorien" asChild>
-          <Pressable style={[s.chip, s.chipKategorien]}><Text style={s.chipText}>⚙ Kategorien</Text></Pressable>
-        </Link>
+        <Pressable onPress={() => router.push('/kategorien')} style={[s.chip, s.chipKategorien]}><Text style={s.chipText}>⚙ Kategorien</Text></Pressable>
       </ScrollView>
       {offeneHaupt && unterKategorien.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
@@ -224,12 +225,12 @@ export default function Uebersicht() {
   );
 }
 
-function Zaehler({ farbe, zahl, text }: { farbe: string; zahl: number; text: string }) {
+function Zaehler({ farbe, zahl, text, aktiv, aus, onPress }: { farbe: string; zahl: number; text: string; aktiv: boolean; aus: boolean; onPress: () => void }) {
   return (
-    <View style={[s.zaehler, { backgroundColor: farbe }]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [s.zaehler, { backgroundColor: farbe }, aktiv && s.zaehlerAktiv, aus && { opacity: 0.35 }, pressed && { opacity: 0.7 }]}>
       <Text style={s.zaehlerZahl}>{zahl}</Text>
-      <Text style={s.zaehlerText}>{text}</Text>
-    </View>
+      <Text style={s.zaehlerText}>{aktiv ? `nur ${text} ✕` : text}</Text>
+    </Pressable>
   );
 }
 
@@ -250,6 +251,7 @@ const s = StyleSheet.create({
   ampel: { flexDirection: 'row', gap: 8 },
   reihe: { flexDirection: 'row', gap: 8 },
   zaehler: { flex: 1, borderRadius: groessen.radius, paddingVertical: 10, alignItems: 'center' },
+  zaehlerAktiv: { borderWidth: 4, borderColor: farben.text },
   zaehlerZahl: { color: '#fff', fontSize: sz(26), fontWeight: '800' },
   zaehlerText: { color: '#fff', fontSize: sz(13), fontWeight: '600' },
   suche: { backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, borderRadius: groessen.radius, minHeight: 56, paddingHorizontal: 16, fontSize: groessen.schrift, color: farben.text },

@@ -124,3 +124,12 @@ test('Hinweis-Schlüssel ändert sich bei neuem Mangel (ausgeblendet -> kommt wi
   assert.equal(zwei[0].schluessel, 'mangel:a:2');
   assert.notEqual(zwei[0].schluessel, drei[0].schluessel);
 });
+
+test('Zuordnung: Ortsangaben zählen nicht (Therme Büro ist keine Feuerlöscher-Sache)', () => {
+  const v = zuordnungVorschlag('Therme Büro', [
+    { name: 'Feuerlöscher Büro', kategorie_id: 'b', intervall: j, einmalig: false, aufgabe: '' },
+    { name: 'Therme Halle 2', kategorie_id: 'h', intervall: j, einmalig: false, aufgabe: '' },
+  ], kat);
+  assert.equal(v?.kategorie_id, 'h');
+  assert.equal(zuordnungVorschlag('Keller', [{ name: 'Therme Keller', kategorie_id: 'h', intervall: j, einmalig: false, aufgabe: '' }], kat), null);
+});

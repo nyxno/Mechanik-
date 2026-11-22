@@ -5,6 +5,7 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { einstellungenLaden, einstellungenSpeichern, prueferLaden, prueferSpeichern, schriftFaktorSpeichern } from '@/db/repo';
 import { router } from 'expo-router';
+import { testdatenAnlegen } from '@/dev/testdaten';
 import { Eingabe } from '@/components/Eingabe';
 import type { ErinnerungsEinstellungen } from '@/lib/erinnerungsplan';
 import { berechtigungAnfragen, berechtigungStatus, erinnerungenNeuPlanen, genaueUhrzeitErlauben, testErinnerung } from '@/lib/erinnerungen';
@@ -139,6 +140,9 @@ export default function Einstellungen() {
       <Text style={s.hinweis}>
         {e.aktiv && status.erlaubt ? `Geplante Erinnerungen: ${geplant ?? '…'}` : 'Keine Erinnerungen geplant.'}
       </Text>
+      {__DEV__ ? (
+        <Taste titel="🧪 Testdaten anlegen (nur Entwicklung)" art="sekundaer" klein onPress={async () => { await testdatenAnlegen(db); laden(); }} />
+      ) : null}
       <Pressable onPress={() => Linking.openSettings()} style={{ paddingVertical: 14 }}>
         <Text style={s.link}>Ton oder Lautstärke ändern → Android-Einstellungen der App</Text>
       </Pressable>

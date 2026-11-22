@@ -1,7 +1,7 @@
 // Zulagen-Taste: Hitze- und Staubstunden einfach mit − / ＋ eintragen. Zählt in die Monatsstatistik.
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { durchfuehrungenImBereich, zulageLaden, zulageSetzen, zulagenImBereich } from '@/db/repo';
 import { formatMitTag, heute, plusTage, zuDate } from '@/lib/datum';
@@ -15,7 +15,8 @@ const SCHRITT = 0.5;
 
 export default function Zulagen() {
   const db = useSQLiteContext();
-  const [tag, setTag] = useState(heute());
+  const { tag: tagParam } = useLocalSearchParams<{ tag?: string }>();
+  const [tag, setTag] = useState(tagParam && /^\d{4}-\d{2}-\d{2}$/.test(tagParam) && tagParam <= heute() ? tagParam : heute());
   const [hitze, setHitze] = useState(0);
   const [staub, setStaub] = useState(0);
   const [ausArbeiten, setAusArbeiten] = useState({ hitze: 0, staub: 0 });
