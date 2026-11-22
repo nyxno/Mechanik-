@@ -95,9 +95,16 @@ export default function Kalender() {
                 ))}
               </View>
               {l.length > 4 ? <Text style={[s.mehr, gewaehlt && { color: '#fff' }]}>+{l.length - 4}</Text> : null}
-              {erledigtProTag.get(d)?.length ? (
-                <Text style={[s.erledigtZahl, gewaehlt && { color: '#fff' }]}>✓{erledigtProTag.get(d)!.length}</Text>
-              ) : null}
+              {(() => {
+                const z = (zulagenProTag.get(d)?.hitze ?? 0) + (zulagenProTag.get(d)?.staub ?? 0) + (erledigtProTag.get(d) ?? []).reduce((n, x) => n + x.hitze + x.staub, 0);
+                const n = erledigtProTag.get(d)?.length ?? 0;
+                if (!z && !n) return null;
+                return (
+                  <Text style={[s.erledigtZahl, gewaehlt && { color: '#fff' }]}>
+                    {n ? `✓${n}` : ''}{z ? <Text style={{ color: gewaehlt ? '#fff' : '#EA580C' }}>{n ? ' ' : ''}⏱</Text> : null}
+                  </Text>
+                );
+              })()}
             </Pressable>
           );
         })}

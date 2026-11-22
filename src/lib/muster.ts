@@ -125,7 +125,7 @@ export function standortVon(text: string): string | null {
   return `${wort[0].toUpperCase()}${wort.slice(1)}${zusatz}`;
 }
 
-export interface StandortEintrag { id: string; name: string; zusatzinfo: string; naechster: IsoDatum | null }
+export interface StandortEintrag { id: string; name: string; zusatzinfo: string; naechster: IsoDatum | null; intervallTage?: number }
 export interface StandortGruppe { standort: string; ids: string[]; von: IsoDatum; bis: IsoDatum }
 
 /** Standorte mit mindestens 2 Arbeiten, die in den nächsten `tage` Tagen (oder schon) fällig sind. */
@@ -134,6 +134,7 @@ export function standortGruppen(eintraege: StandortEintrag[], heuteIso: IsoDatum
   const gruppen = new Map<string, StandortEintrag[]>();
   for (const e of eintraege) {
     if (!e.naechster || e.naechster > bis) continue;
+    if (e.intervallTage !== undefined && e.intervallTage < 21) continue; // Wöchentliches ist sowieso ständig fällig
     const s = standortVon(`${e.name} ${e.zusatzinfo}`);
     if (!s) continue;
     gruppen.set(s, [...(gruppen.get(s) ?? []), e]);

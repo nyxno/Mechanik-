@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungenLaden, durchfuehrungLoeschen, eintragFaelligkeit, eintragIntervall, eintragLaden, eintragSchlummern, einstellungenLaden, fotosZuDurchfuehrungen, fotosZuEintrag, mangelBehoben, materialBesorgt, materialLaden } from '@/db/repo';
+import { durchfuehrungenLaden, durchfuehrungLoeschen, eintragFaelligkeit, eintragIntervall, eintragLaden, eintragSchlummern, einstellungenLaden, fotoSpeichern, fotosZuDurchfuehrungen, fotosZuEintrag, mangelBehoben, materialBesorgt, materialLaden } from '@/db/repo';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import type { Durchfuehrung, EintragMitStatus, Foto } from '@/db/typen';
 import { intervallText } from '@/lib/intervall';
@@ -14,7 +14,7 @@ import { MaterialZeile } from '@/components/MaterialZeile';
 import { ZulagenDialog, ZulagenZiel } from '@/components/ZulagenDialog';
 import { GebietMarke } from '@/components/EintragKarte';
 import { formatDeutsch, formatMitTag, heute, schlummerZiel } from '@/lib/datum';
-import { fotoDateiLoeschen } from '@/lib/fotos';
+import { fotoDateiLoeschen, fotosAusGalerie, fotosMitKamera } from '@/lib/fotos';
 import { Bildschirm } from '@/components/Bildschirm';
 import { FotoAnsicht } from '@/components/FotoAnsicht';
 import { FotoLeiste } from '@/components/FotoLeiste';
@@ -144,7 +144,9 @@ export default function EintragDetail() {
       {eintrag.aufgabe ? <Abschnitt titel="Was ist zu machen?" text={eintrag.aufgabe} /> : null}
       {eintrag.zusatzinfo ? <Abschnitt titel="Zusatzinfo" text={eintrag.zusatzinfo} /> : null}
 
-      <FotoLeiste titel="Fotos" dateien={fotos.map((x) => x.datei)} onAnsehen={setAnsicht} />
+      <FotoLeiste titel="Fotos" dateien={fotos.map((x) => x.datei)} onAnsehen={setAnsicht}
+        onKamera={async () => { for (const d of await fotosMitKamera()) await fotoSpeichern(db, { eintragId: id }, d); laden(); }}
+        onGalerie={async () => { for (const d of await fotosAusGalerie()) await fotoSpeichern(db, { eintragId: id }, d); laden(); }} />
 
       <Text style={s.abschnittTitel}>📦 Material ({material.filter((m) => !m.besorgt).length} offen)</Text>
       {material.map((m) => (

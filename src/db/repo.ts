@@ -10,7 +10,7 @@ import { freieFarbe } from '@/lib/farben';
 import type { MangelEintrag } from '@/lib/muster';
 import type { StatZeile, TagesZulage } from '@/lib/statistik';
 import { Hinweis, hinweiseErstellen } from '@/lib/hinweise';
-import type { Intervall } from '@/lib/intervall';
+import { intervallInTagen, type Intervall } from '@/lib/intervall';
 import { LOKALER_BETRIEB_ID } from './schema';
 import type { Durchfuehrung, Eintrag, EintragMitStatus, Ergebnis, Foto, Kategorie, Material } from './typen';
 import { geschwister } from '@/lib/kategorien';
@@ -279,7 +279,7 @@ export async function hinweiseLaden(db: SQLiteDatabase): Promise<{ hinweise: Hin
   const [eintraege, maengel, zeitpunkte, ein, weg] = await Promise.all([
     eintraegeLaden(db), alleMaengel(db), erfassungsZeitpunkte(db), einstellungenLaden(db), ausgeblendeteHinweise(db),
   ]);
-  const offen = eintraege.map((e) => ({ ...e, naechster: eintragFaelligkeit(e, h).naechster }));
+  const offen = eintraege.map((e) => ({ ...e, naechster: eintragFaelligkeit(e, h).naechster, intervallTage: e.einmalig ? 9999 : intervallInTagen(eintragIntervall(e)) }));
   const alle = hinweiseErstellen({ eintraege: offen, maengel, zeitpunkte, standardUhrzeit: ein.uhrzeit, heuteIso: h });
   const hinweise = alle.filter((x) => !weg.includes(x.schluessel));
   return { hinweise, eintraege, ausgeblendet: alle.length - hinweise.length };

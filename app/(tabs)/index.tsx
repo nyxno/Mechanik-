@@ -135,15 +135,15 @@ export default function Uebersicht() {
         <Pressable onPress={() => router.push('/material')} style={({ pressed }) => [s.knopf, pressed && { opacity: 0.7 }]}>
           <Text style={s.knopfText}>📦 Material{materialOffen ? ` (${materialOffen})` : ''}</Text>
         </Pressable>
-        <Pressable onPress={() => router.push('/erledigt')} style={({ pressed }) => [s.knopf, s.erledigt, { flex: 0.7 }, pressed && { opacity: 0.7 }]}>
+        <Pressable onPress={() => router.push('/erledigt')} style={({ pressed }) => [s.knopf, s.erledigt, { flex: 0.6 }, pressed && { opacity: 0.7 }]}>
           <Text style={s.erledigtText}>✅ {anzahlErledigt}</Text>
         </Pressable>
+        {anzahlHinweise > 0 ? (
+          <Pressable onPress={() => router.push('/hinweise')} style={({ pressed }) => [s.knopf, s.hinweis, { flex: 0.6 }, pressed && { opacity: 0.7 }]}>
+            <Text style={s.hinweisText}>💡 {anzahlHinweise}</Text>
+          </Pressable>
+        ) : null}
       </View>
-      {anzahlHinweise > 0 ? (
-        <Pressable onPress={() => router.push('/hinweise')} style={({ pressed }) => [s.hinweis, pressed && { opacity: 0.7 }]}>
-          <Text style={s.hinweisText}>💡 {anzahlHinweise === 1 ? '1 Hinweis' : `${anzahlHinweise} Hinweise`} – die App hat Muster erkannt</Text>
-        </Pressable>
-      ) : null}
       <TextInput
         value={suche}
         onChangeText={setSuche}
@@ -245,12 +245,12 @@ function Chip({ aktiv, text, farbe, onPress }: { aktiv: boolean; text: string; f
 
 const s = StyleSheet.create({
   seite: { flex: 1, backgroundColor: farben.hintergrund },
-  kopf: { paddingTop: groessen.abstand, paddingBottom: 12, gap: 10 },
+  kopf: { paddingTop: 12, paddingBottom: 10, gap: 8 },
   kopfTaste: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, backgroundColor: farben.grauHell },
   kopfTasteText: { fontSize: sz(16), fontWeight: '700', color: farben.primaer },
   ampel: { flexDirection: 'row', gap: 8 },
   reihe: { flexDirection: 'row', gap: 8 },
-  zaehler: { flex: 1, borderRadius: groessen.radius, paddingVertical: 10, alignItems: 'center' },
+  zaehler: { flex: 1, borderRadius: groessen.radius, paddingVertical: 7, alignItems: 'center' },
   zaehlerAktiv: { borderWidth: 4, borderColor: farben.text },
   zaehlerZahl: { color: '#fff', fontSize: sz(26), fontWeight: '800' },
   zaehlerText: { color: '#fff', fontSize: sz(13), fontWeight: '600' },

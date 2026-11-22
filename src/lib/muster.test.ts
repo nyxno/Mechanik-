@@ -133,3 +133,12 @@ test('Zuordnung: Ortsangaben zählen nicht (Therme Büro ist keine Feuerlöscher
   assert.equal(v?.kategorie_id, 'h');
   assert.equal(zuordnungVorschlag('Keller', [{ name: 'Therme Keller', kategorie_id: 'h', intervall: j, einmalig: false, aufgabe: '' }], kat), null);
 });
+
+test('Standort: häufige (wöchentliche) Arbeiten zählen nicht', () => {
+  const g = standortGruppen([
+    { id: '1', name: 'Drehbank Werkstatt', zusatzinfo: '', naechster: '2026-11-20', intervallTage: 7 },
+    { id: '2', name: 'Kompressor Werkstatt', zusatzinfo: '', naechster: '2026-11-25', intervallTage: 91 },
+    { id: '3', name: 'Heizkessel Werkstatt', zusatzinfo: '', naechster: '2026-11-28', intervallTage: 183 },
+  ], '2026-11-17');
+  assert.deepEqual(g[0].ids, ['2', '3']);
+});

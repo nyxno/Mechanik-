@@ -10,8 +10,7 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 „Übernahme in die nächste Runde“ und wird dort zuerst erledigt.
 
 ## Übernahme in die nächste Runde
-- Ideen aus Runde 1, noch nicht umgesetzt: Kopfbereich der Startseite kompakter (Liste beginnt erst
-  bei ca. der Hälfte des Bildschirms); Kalender-Tage mit Zulagen markieren.
+- (nichts offen)
 
 ## Runde 1 – 22.11.2026, 22:22 (Version 0.9)
 
@@ -27,3 +26,19 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 - **Datum oben:** Statt „Übersicht“ steht oben „Heute · So, 22.11.2026“.
 - **Kalender-Tagesansicht:** Datum zwischen den Pfeilen; Taste „⏱ Zulagen für diesen Tag eintragen“
   öffnet die Zulagen direkt für den gewählten Tag.
+
+## Runde 2 – 22.11.2026, 23:22 (Version 0.10)
+
+**Aus Runde 1 übernommen – erledigt**
+- **Startseite kompakter:** Zulagen, Material, Erledigt und Hinweise in einer Reihe, Ampel flacher →
+  die Liste beginnt deutlich weiter oben.
+- **Kalender:** Tage mit Zulagenstunden zeigen ein orangenes ⏱ (neben ✓ für erledigte Arbeiten).
+
+**Gefunden & behoben**
+- **Hinweis „gleicher Standort“** hat wöchentliche Arbeiten (z. B. Drehbank schmieren) mitgezählt –
+  die sind ohnehin ständig fällig. → Arbeiten mit Intervall unter 3 Wochen zählen dort nicht mehr.
+
+**Neu**
+- **Fotos direkt beim Gerät:** Auf der Geräteseite gibt es jetzt „📷 Kamera“ und „🖼 Galerie“ –
+  kein Umweg über „Bearbeiten“ mehr.
+
