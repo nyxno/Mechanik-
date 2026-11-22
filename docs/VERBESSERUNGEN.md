@@ -6,6 +6,13 @@ Jede Runde: Die App wird in einer Browser-Vorschau mit realistischen Testdaten d
 So läuft die Vorschau (nur für Entwickler): `npm run web` – im Browser startet die App mit
 Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 
+**Regel:** Eine Runde dauert höchstens **20 Minuten**. Was nicht fertig wird, kommt unten in
+„Übernahme in die nächste Runde“ und wird dort zuerst erledigt.
+
+## Übernahme in die nächste Runde
+- Ideen aus Runde 1, noch nicht umgesetzt: Kopfbereich der Startseite kompakter (Liste beginnt erst
+  bei ca. der Hälfte des Bildschirms); Kalender-Tage mit Zulagen markieren.
+
 ## Runde 1 – 22.11.2026, 22:22 (Version 0.9)
 
 **Gefunden & behoben**
