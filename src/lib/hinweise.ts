@@ -4,6 +4,8 @@ import { MangelEintrag, standortGruppen, StandortEintrag, ueblicheZeit, wiederke
 
 export interface Hinweis {
   art: 'mangel' | 'standort' | 'zeit';
+  /** Eindeutig je Inhalt: ändert sich, wenn sich das Muster ändert (dann erscheint ein ausgeblendeter Hinweis wieder). */
+  schluessel: string;
   titel: string;
   text: string;
   eintragIds: string[];
@@ -26,6 +28,7 @@ export function hinweiseErstellen(p: {
     if (!name) continue;
     liste.push({
       art: 'mangel',
+      schluessel: `mangel:${m.eintragId}:${m.anzahl}`,
       titel: `⚠ ${name}: ${m.anzahl} Mängel in 12 Monaten`,
       text: m.haeufigste
         ? `${m.haeufigsteAnzahl}× „${m.haeufigste}“. Vielleicht Teil tauschen oder Intervall verkürzen?`
@@ -37,6 +40,7 @@ export function hinweiseErstellen(p: {
   for (const g of standortGruppen(p.eintraege, p.heuteIso)) {
     liste.push({
       art: 'standort',
+      schluessel: `standort:${g.standort}:${[...g.ids].sort().join(',')}`,
       titel: `📍 ${g.standort}: ${g.ids.length} Arbeiten bald fällig`,
       text: `Fällig zwischen ${formatDeutsch(g.von)} und ${formatDeutsch(g.bis)} – zusammen erledigen spart einen Weg.`,
       eintragIds: g.ids,
@@ -51,6 +55,7 @@ export function hinweiseErstellen(p: {
     if (uhrzeit !== p.standardUhrzeit) {
       liste.push({
         art: 'zeit',
+        schluessel: `zeit:${uhrzeit}`,
         titel: '🕒 Deine übliche Arbeitszeit',
         text: `${z.text} Erinnerungen um ${uhrzeit} Uhr wären passend (bisher ${p.standardUhrzeit} Uhr).`,
         eintragIds: [],

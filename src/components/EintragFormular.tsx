@@ -52,6 +52,8 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
   const [uhrzeit, setUhrzeit] = useState<string | null>(start?.uhrzeit ?? null);
   const [einmalig, setEinmalig] = useState<boolean>(start?.einmalig ?? false);
   const [zuletzt, setZuletzt] = useState<string | null>(null);
+  // Beim Anlegen mit Intervall: erster Termin steht immer da (änderbar). Von Hand gewählt -> nicht mehr automatisch anpassen.
+  const [terminVonHand, setTerminVonHand] = useState(!neu || !!start?.naechster_termin);
   const [neueFotos, setNeueFotos] = useState<string[]>([]);
   const [laeuft, setLaeuft] = useState(false);
   // Automatische Zuordnung: nur beim Anlegen und solange das Gebiet nicht von Hand gewählt wurde
@@ -75,6 +77,12 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
   const gewaehlt = kategorien.find((k) => k.id === kategorieId);
   const hauptId = gewaehlt ? (haupt.some((h) => h.id === gewaehlt.id) ? gewaehlt.id : gewaehlt.eltern_id) : null;
   const unter = hauptId ? kategorien.filter((k) => k.eltern_id === hauptId) : [];
+  useEffect(() => {
+    if (!neu || terminVonHand) return;
+    if (einmalig) { if (!naechster) setNaechster(heuteOderMontag(heute())); return; }
+    setNaechster(zuletzt && istGueltigesIntervall(intervall) ? aufWerktag(intervallAddieren(zuletzt, intervall)) : heuteOderMontag(heute()));
+  }, [neu, terminVonHand, einmalig, zuletzt, intervall.wert, intervall.einheit]);
+
   const vorschlagKategorie = vorschlag ? kategorien.find((k) => k.id === vorschlag.kategorie_id) : null;
   const mehrUebernehmbar = !!vorschlag && (vorschlag.einmalig || !!vorschlag.intervall || !!vorschlag.aufgabe) && !vorschlagUebernommen;
 
@@ -171,11 +179,16 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
         />
       ) : null}
       <DatumFeld
-        label={einmalig ? 'Fällig am' : 'Nächstes Mal fällig am'}
+        label={einmalig ? 'Fällig am' : neu ? 'Erstes Mal fällig am' : 'Nächstes Mal fällig am'}
         wert={naechster}
-        onChange={setNaechster}
-        leerText={einmalig ? 'Datum wählen' : berechnet ? `Automatisch (${formatDeutsch(berechnet)})` : 'Automatisch berechnen'}
-        hinweis={wochenende ? `${wochenende}\n${terminHinweis}` : terminHinweis}
+        onChange={(d) => { setNaechster(d); setTerminVonHand(true); }}
+        leerText={neu ? undefined : einmalig ? 'Datum wählen' : berechnet ? `Automatisch (${formatDeutsch(berechnet)})` : 'Automatisch berechnen'}
+        hinweis={[
+          wochenende,
+          neu && !einmalig
+            ? `📅 Antippen, um das Datum zu ändern. Danach gilt das Intervall (${intervallText(intervall)}) ab der jeweiligen Erledigung.`
+            : terminHinweis,
+        ].filter(Boolean).join('\n')}
       />
       <UhrzeitFeld
         label="Uhrzeit der Erinnerung"

@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in **Version 0.7** umgesetzt (✅). Nichts offen.
+**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in Version 0.7, 26–29 in **Version 0.8** umgesetzt (✅). Nichts offen.
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -172,4 +172,22 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Abhaken „besorgt“ wie eine Einkaufsliste; erledigte Einträge ausblendbar.
 - Optional einem Eintrag (Gerät) zuordnen – beim Gerät steht dann „📦 Material“ mit den passenden Teilen.
 - Lernende Vorschläge beim Namen.
+
+## ✅ 26. Erster Termin bei Intervall wählbar
+- Beim Anlegen mit Intervall muss klar wählbar sein, **wann es das erste Mal fällig ist**.
+- Feld „Erstes Mal fällig am“ zeigt immer ein Datum (Standard: heute bzw. Montag; mit „zuletzt gemacht“
+  automatisch zuletzt + Intervall) und lässt sich per Kalender ändern.
+
+## ✅ 27. Kalender: Tag antippen → was wurde gemacht
+- Tag antippen öffnet eine große Tagesansicht: erledigte Arbeiten (Ergebnis, Zulagen),
+  Stunden über die Zulagen-Taste, und was geplant/fällig war. Mit ◀ ▶ Tag wechseln.
+
+## ✅ 28. Hinweise löschen
+- Jeder Hinweis hat „✕ Ausblenden“. Kommt nur wieder, wenn sich etwas ändert (z. B. ein weiterer Mangel).
+- „Ausgeblendete wieder zeigen“ als Taste.
+
+## ✅ 29. Zulagen bei den jeweiligen Arbeiten
+- Hitze-/Staubstunden auch **nachträglich** bei einer erledigten Arbeit eintragen (im Verlauf antippen).
+- Nach „✓ Heute erledigt“ direkt eine Taste „⏱ Zulagen“ in der Rückgängig-Leiste.
+- Im Formular „Durchführung erfassen“ stehen die Zulagen weiter oben.
 

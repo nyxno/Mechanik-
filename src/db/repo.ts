@@ -258,12 +258,37 @@ export async function erfassungsZeitpunkte(db: SQLiteDatabase): Promise<Date[]> 
   return rows.map((r) => new Date(r.created_at)).filter((d) => !isNaN(d.getTime()));
 }
 
-/** Lädt alles Nötige und erstellt die Hinweise aus erkannten Mustern. */
-export async function hinweiseLaden(db: SQLiteDatabase): Promise<{ hinweise: Hinweis[]; eintraege: EintragMitStatus[] }> {
+async function ausgeblendeteHinweise(db: SQLiteDatabase): Promise<string[]> {
+  const r = await db.getFirstAsync<{ wert: string }>("SELECT wert FROM einstellungen WHERE schluessel = 'hinweise_ausgeblendet'");
+  try { return r ? (JSON.parse(r.wert) as string[]) : []; } catch { return []; }
+}
+
+/** Hinweis ausblenden (bis sich das Muster ändert). */
+export async function hinweisAusblenden(db: SQLiteDatabase, schluessel: string): Promise<void> {
+  const liste = [...new Set([...(await ausgeblendeteHinweise(db)), schluessel])].slice(-300);
+  await db.runAsync("INSERT OR REPLACE INTO einstellungen (schluessel, wert) VALUES ('hinweise_ausgeblendet', ?)", JSON.stringify(liste));
+}
+
+export async function hinweiseWiederZeigen(db: SQLiteDatabase): Promise<void> {
+  await db.runAsync("DELETE FROM einstellungen WHERE schluessel = 'hinweise_ausgeblendet'");
+}
+
+/** Lädt alles Nötige und erstellt die Hinweise aus erkannten Mustern (ohne ausgeblendete). */
+export async function hinweiseLaden(db: SQLiteDatabase): Promise<{ hinweise: Hinweis[]; eintraege: EintragMitStatus[]; ausgeblendet: number }> {
   const h = heute();
-  const [eintraege, maengel, zeitpunkte, ein] = await Promise.all([eintraegeLaden(db), alleMaengel(db), erfassungsZeitpunkte(db), einstellungenLaden(db)]);
+  const [eintraege, maengel, zeitpunkte, ein, weg] = await Promise.all([
+    eintraegeLaden(db), alleMaengel(db), erfassungsZeitpunkte(db), einstellungenLaden(db), ausgeblendeteHinweise(db),
+  ]);
   const offen = eintraege.map((e) => ({ ...e, naechster: eintragFaelligkeit(e, h).naechster }));
-  return { hinweise: hinweiseErstellen({ eintraege: offen, maengel, zeitpunkte, standardUhrzeit: ein.uhrzeit, heuteIso: h }), eintraege };
+  const alle = hinweiseErstellen({ eintraege: offen, maengel, zeitpunkte, standardUhrzeit: ein.uhrzeit, heuteIso: h });
+  const hinweise = alle.filter((x) => !weg.includes(x.schluessel));
+  return { hinweise, eintraege, ausgeblendet: alle.length - hinweise.length };
+}
+
+/** Zulagenstunden einer erledigten Arbeit nachträglich ändern. */
+export async function durchfuehrungZulagenSetzen(db: SQLiteDatabase, id: string, hitze: number, staub: number): Promise<void> {
+  await db.runAsync('UPDATE durchfuehrungen SET hitze_stunden = ?, staub_stunden = ?, updated_at = ? WHERE id = ?',
+    Math.max(0, hitze), Math.max(0, staub), jetztIso(), id);
 }
 
 /** Alle Durchführungen in einem Zeitraum, mit Eintrag und Gebiet (für Statistik und Kalender). */

@@ -11,6 +11,7 @@ import { wiederkehrendeMaengel } from '@/lib/muster';
 import { stundenText } from '@/lib/statistik';
 import type { Material } from '@/db/typen';
 import { MaterialZeile } from '@/components/MaterialZeile';
+import { ZulagenDialog, ZulagenZiel } from '@/components/ZulagenDialog';
 import { GebietMarke } from '@/components/EintragKarte';
 import { formatDeutsch, formatMitTag, heute, schlummerZiel } from '@/lib/datum';
 import { fotoDateiLoeschen } from '@/lib/fotos';
@@ -31,6 +32,7 @@ export default function EintragDetail() {
   const [ansicht, setAnsicht] = useState<string | null>(null);
   const [standardUhrzeit, setStandardUhrzeit] = useState('07:00');
   const [material, setMaterial] = useState<Material[]>([]);
+  const [zulagenZiel, setZulagenZiel] = useState<ZulagenZiel | null>(null);
 
   const laden = useCallback(async () => {
     const [e, f, v, vf, ein] = await Promise.all([eintragLaden(db, id), fotosZuEintrag(db, id), durchfuehrungenLaden(db, id), fotosZuDurchfuehrungen(db, id), einstellungenLaden(db)]);
@@ -155,7 +157,9 @@ export default function EintragDetail() {
       {verlauf.map((d, i) => {
         const df = verlaufFotos.filter((x) => x.durchfuehrung_id === d.id);
         return (
-          <Pressable key={d.id} onLongPress={() => durchfuehrungEntfernen(d)} style={[s.verlauf, i === 0 && s.verlaufNeu]}>
+          <Pressable key={d.id} onLongPress={() => durchfuehrungEntfernen(d)}
+            onPress={() => setZulagenZiel({ id: d.id, titel: `${eintrag.name} – ${formatDeutsch(d.datum)}`, hitze: d.hitze_stunden, staub: d.staub_stunden })}
+            style={[s.verlauf, i === 0 && s.verlaufNeu]}>
             <View style={s.verlaufKopf}>
               <Text style={s.verlaufDatum}>{formatDeutsch(d.datum)}</Text>
               {i === 0 ? <Text style={s.zuletzt}>zuletzt</Text> : null}
@@ -173,11 +177,13 @@ export default function EintragDetail() {
               </Text>
             ) : null}
             {d.pruefer ? <Text style={s.klein}>Geprüft von: {d.pruefer}</Text> : null}
+            <Text style={s.zulagenLink}>⏱ {d.hitze_stunden > 0 || d.staub_stunden > 0 ? 'Zulagen ändern' : 'Zulagen eintragen'}</Text>
             {df.length ? <FotoLeiste dateien={df.map((x) => x.datei)} onAnsehen={setAnsicht} /> : null}
           </Pressable>
         );
       })}
-      {verlauf.length ? <Text style={s.hinweis}>Lange auf eine Durchführung drücken, um sie zu löschen.</Text> : null}
+      {verlauf.length ? <Text style={s.hinweis}>Antippen: Zulagen eintragen. Lange drücken: Durchführung löschen.</Text> : null}
+      <ZulagenDialog ziel={zulagenZiel} onFertig={(g) => { setZulagenZiel(null); if (g) laden(); }} />
 
       <FotoAnsicht datei={ansicht} onSchliessen={() => setAnsicht(null)} />
     </Bildschirm>
@@ -212,5 +218,6 @@ const s = StyleSheet.create({
   mangel: { borderWidth: 2, borderRadius: groessen.radius, padding: 14, marginBottom: 12, gap: 8 },
   mangelTitel: { fontSize: groessen.schrift, fontWeight: '800' },
   mangelText: { fontSize: groessen.schrift, color: farben.text },
+  zulagenLink: { fontSize: groessen.schriftKlein, fontWeight: '800', color: '#EA580C', marginTop: 6 },
   ergebnisZeile: { fontSize: groessen.schriftKlein, fontWeight: '700', marginBottom: 2 },
 });

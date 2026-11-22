@@ -1,15 +1,15 @@
 // Monatskalender: was ist wann eingeplant. Punkte in der Farbe des Gebiets.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungenImBereich, eintraegeLaden, eintragIntervall } from '@/db/repo';
-import { stundenText, StatZeile } from '@/lib/statistik';
+import { durchfuehrungenImBereich, eintraegeLaden, eintragIntervall, zulagenImBereich } from '@/db/repo';
+import { stundenText, StatZeile, TagesZulage } from '@/lib/statistik';
 import { GebietMarke } from '@/components/EintragKarte';
 import { Taste } from '@/components/Taste';
 import { ergebnisFarben } from '@/theme';
 import type { EintragMitStatus } from '@/db/typen';
-import { formatMitTag, heute, zuDate } from '@/lib/datum';
+import { formatMitTag, heute, plusTage, zuDate } from '@/lib/datum';
 import { monatsGrenzen, monatsRaster, termineImBereich } from '@/lib/kalender';
 import { Bildschirm } from '@/components/Bildschirm';
 import { EintragKarte } from '@/components/EintragKarte';
@@ -25,8 +25,10 @@ export default function Kalender() {
   const [monat, setMonat] = useState(() => ({ j: zuDate(h).getFullYear(), m: zuDate(h).getMonth() }));
   const [tag, setTag] = useState<string | null>(h);
   const [erledigt, setErledigt] = useState<StatZeile[]>([]);
+  const [zulagen, setZulagen] = useState<TagesZulage[]>([]);
+  const [offen, setOffen] = useState(false);
   const raster = monatsRaster(monat.j, monat.m);
-  const ladeErledigt = useCallback(() => { durchfuehrungenImBereich(db, raster[0], raster[41]).then(setErledigt); }, [db, raster[0], raster[41]]);
+  const ladeErledigt = useCallback(() => { durchfuehrungenImBereich(db, raster[0], raster[41]).then(setErledigt); zulagenImBereich(db, raster[0], raster[41]).then(setZulagen); }, [db, raster[0], raster[41]]);
   useFocusEffect(useCallback(() => { eintraegeLaden(db).then(setEintraege); ladeErledigt(); }, [db, ladeErledigt]));
   useEffect(() => { ladeErledigt(); }, [ladeErledigt]);
   const erledigtProTag = useMemo(() => {
@@ -34,6 +36,7 @@ export default function Kalender() {
     for (const z of erledigt) m.set(z.datum, [...(m.get(z.datum) ?? []), z]);
     return m;
   }, [erledigt]);
+  const zulagenProTag = useMemo(() => new Map(zulagen.map((z) => [z.datum, z])), [zulagen]);
 
   const { von, bis } = monatsGrenzen(monat.j, monat.m);
   const termine = useMemo(() => termineImBereich(
@@ -47,6 +50,14 @@ export default function Kalender() {
     const d = new Date(monat.j, monat.m + delta, 1);
     setMonat({ j: d.getFullYear(), m: d.getMonth() });
     setTag(null);
+  };
+
+  // In der Tagesansicht einen Tag vor/zurück; beim Monatswechsel den Kalender mitnehmen
+  const tagWechseln = (delta: number) => {
+    const n = plusTage(tag!, delta);
+    const d = zuDate(n);
+    if (d.getMonth() !== monat.m || d.getFullYear() !== monat.j) setMonat({ j: d.getFullYear(), m: d.getMonth() });
+    setTag(n);
   };
 
   const tagListe = tag ? (termine.get(tag) ?? []).map((t) => nachId.get(t.id)).filter(Boolean) as EintragMitStatus[] : [];
@@ -75,7 +86,7 @@ export default function Kalender() {
           const ueber = l.some((t) => t.ueberfaellig);
           const gewaehlt = d === tag;
           return (
-            <Pressable key={d} onPress={() => setTag(d)}
+            <Pressable key={d} onPress={() => { setTag(d); setOffen(true); }}
               style={[s.zelle, !imMonat && { opacity: 0.35 }, d === h && s.heute, ueber && s.ueber, gewaehlt && s.gewaehlt]}>
               <Text style={[s.zahl, gewaehlt && { color: '#fff' }]}>{zuDate(d).getDate()}</Text>
               <View style={s.punkte}>
@@ -92,18 +103,28 @@ export default function Kalender() {
         })}
       </View>
 
-      {tag ? (
-        <View style={{ marginTop: groessen.abstand }}>
-          <Text style={s.tagTitel}>{formatMitTag(tag)}{tag === h ? ' – heute' : ''}</Text>
+      <Text style={s.tipp}>👆 Tag antippen, um zu sehen, was gemacht wurde und was geplant ist.</Text>
 
-          {tag <= h ? (
+      <Modal visible={offen && !!tag} animationType="slide" onRequestClose={() => setOffen(false)}>
+        <View style={s.modal}>
+          <View style={s.modalKopf}>
+            <Pressable onPress={() => tag && tagWechseln(-1)} style={({ pressed }) => [s.pfeil, pressed && { opacity: 0.6 }]}><Text style={s.pfeilText}>◀</Text></Pressable>
+            <View style={{ flex: 1 }} />
+            <Pressable onPress={() => tag && tagWechseln(1)} style={({ pressed }) => [s.pfeil, pressed && { opacity: 0.6 }]}><Text style={s.pfeilText}>▶</Text></Pressable>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: groessen.abstand, paddingBottom: 24 }}>
+            {tag ? (
+              <>
+                <Text style={s.tagTitel}>{formatMitTag(tag!)}{tag === h ? ' – heute' : ''}</Text>
+
+          {tag! <= h ? (
             <>
               <Text style={s.abschnitt}>✓ Erledigt{tag === h ? ' heute' : ''}</Text>
-              {(erledigtProTag.get(tag) ?? []).length === 0 ? <Text style={s.leer}>Nichts erledigt.</Text> : null}
-              {(erledigtProTag.get(tag) ?? []).map((z, i) => {
+              {(erledigtProTag.get(tag!) ?? []).length === 0 ? <Text style={s.leer}>Nichts erledigt.</Text> : null}
+              {(erledigtProTag.get(tag!) ?? []).map((z, i) => {
                 const ef = ergebnisFarben(z.ergebnis);
                 return (
-                  <Pressable key={`${z.eintragId}-${i}`} onPress={() => router.push({ pathname: '/eintrag/[id]', params: { id: z.eintragId } })}
+                  <Pressable key={`${z.eintragId}-${i}`} onPress={() => { setOffen(false); router.push({ pathname: '/eintrag/[id]', params: { id: z.eintragId } }); }}
                     style={({ pressed }) => [s.erledigtZeile, pressed && { opacity: 0.7 }]}>
                     <View style={{ flex: 1, gap: 4 }}>
                       <Text style={s.erledigtName}>{z.name}</Text>
@@ -120,13 +141,27 @@ export default function Kalender() {
                   </Pressable>
                 );
               })}
+                {(zulagenProTag.get(tag!)?.hitze ?? 0) + (zulagenProTag.get(tag!)?.staub ?? 0) > 0 ? (
+                  <View style={s.zulagenBox}>
+                    <Text style={s.erledigtName}>⏱ Zulagen-Taste</Text>
+                    <Text style={s.erledigtInfo}>
+                      🔥 Hitze {stundenText(zulagenProTag.get(tag!)!.hitze)}   🌫 Staub {stundenText(zulagenProTag.get(tag!)!.staub)}
+                    </Text>
+                  </View>
+                ) : null}
               <Text style={s.abschnitt}>{tag === h ? '📅 Noch geplant' : '❗ Damals fällig (überfällig)'}</Text>
             </>
           ) : <Text style={s.abschnitt}>📅 Geplant</Text>}
-          {tagListe.length === 0 ? <Text style={s.leer}>Nichts.</Text> : tagListe.map((e) => <EintragKarte key={e.id} eintrag={e} />)}
-          {tag > h ? <Text style={s.hinweis}>Spätere Termine sind vorausberechnet. Sie verschieben sich, wenn eine Arbeit früher oder später erledigt wird.</Text> : null}
+          {tagListe.length === 0 ? <Text style={s.leer}>Nichts.</Text> : tagListe.map((e) => <EintragKarte key={e.id} eintrag={e} onOeffnen={() => setOffen(false)} />)}
+          {tag! > h ? <Text style={s.hinweis}>Spätere Termine sind vorausberechnet. Sie verschieben sich, wenn eine Arbeit früher oder später erledigt wird.</Text> : null}
+              </>
+            ) : null}
+          </ScrollView>
+          <View style={{ padding: groessen.abstand, paddingBottom: groessen.abstand + 16 }}>
+            <Taste titel="Schließen" onPress={() => setOffen(false)} />
+          </View>
         </View>
-      ) : null}
+      </Modal>
     </Bildschirm>
   );
 }
@@ -154,6 +189,10 @@ const s = StyleSheet.create({
   erledigtZeile: { flexDirection: 'row', backgroundColor: farben.karte, borderRadius: groessen.radius, borderLeftWidth: 10, borderLeftColor: farben.gruen, padding: 12, marginBottom: 10 },
   erledigtName: { fontSize: groessen.schrift, fontWeight: '700', color: farben.text },
   erledigtInfo: { fontSize: groessen.schriftKlein, fontWeight: '600', color: farben.textLeicht },
+  tipp: { color: farben.textLeicht, fontSize: groessen.schriftKlein, marginTop: 12, textAlign: 'center' },
+  modal: { flex: 1, backgroundColor: farben.hintergrund, paddingTop: 40 },
+  modalKopf: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: groessen.abstand },
+  zulagenBox: { backgroundColor: farben.karte, borderRadius: groessen.radius, borderLeftWidth: 10, borderLeftColor: '#EA580C', padding: 12, marginTop: 10, gap: 4 },
   tagTitel: { fontSize: groessen.schriftGross, fontWeight: '800', color: farben.text, marginBottom: 10 },
   leer: { color: farben.grau, fontSize: groessen.schrift },
   hinweis: { color: farben.grau, fontSize: groessen.schriftKlein, marginTop: 4 },

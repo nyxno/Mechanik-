@@ -17,6 +17,7 @@ import { EintragKarte } from '@/components/EintragKarte';
 import { RueckgaengigLeiste } from '@/components/RueckgaengigLeiste';
 import { Taste } from '@/components/Taste';
 import { VorschlagLeiste } from '@/components/Vorschlaege';
+import { ZulagenDialog, ZulagenZiel } from '@/components/ZulagenDialog';
 import { farben, groessen, sz } from '@/theme';
 
 export default function Uebersicht() {
@@ -31,6 +32,7 @@ export default function Uebersicht() {
   const [anzahlHinweise, setAnzahlHinweise] = useState(0);
   const [okOffen, setOkOffen] = useState(false);
   const [materialOffen, setMaterialOffen] = useState(0);
+  const [zulagenZiel, setZulagenZiel] = useState<ZulagenZiel | null>(null);
   const pruefer = useRef('');
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -208,7 +210,9 @@ export default function Uebersicht() {
         }
       />
 
-      <RueckgaengigLeiste text={undo?.text ?? null} onRueckgaengig={rueckgaengig} onAblauf={undoAblauf} unten={groessen.tasteHoehe + groessen.abstand * 2} />
+      <ZulagenDialog ziel={zulagenZiel} onFertig={() => setZulagenZiel(null)} />
+      <RueckgaengigLeiste text={undo?.text ?? null} onRueckgaengig={rueckgaengig} onAblauf={undoAblauf}
+        zweite={undo ? { text: '⏱ Zulagen', onPress: () => { setZulagenZiel({ id: undo.r.durchfuehrungId, titel: undo.text.replace(/^✓ /, ''), hitze: 0, staub: 0 }); setUndo(null); } } : undefined} unten={groessen.tasteHoehe + groessen.abstand * 2} />
 
       <View style={s.fuss}>
         <Taste

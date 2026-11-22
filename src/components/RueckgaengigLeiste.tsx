@@ -9,9 +9,11 @@ interface Props {
   onAblauf: () => void;
   sekunden?: number;
   unten: number;
+  /** Optionale zweite Taste, z. B. "⏱ Zulagen". */
+  zweite?: { text: string; onPress: () => void };
 }
 
-export function RueckgaengigLeiste({ text, onRueckgaengig, onAblauf, sekunden = 8, unten }: Props) {
+export function RueckgaengigLeiste({ text, onRueckgaengig, onAblauf, sekunden = 8, unten, zweite }: Props) {
   useEffect(() => {
     if (!text) return;
     const t = setTimeout(onAblauf, sekunden * 1000);
@@ -21,6 +23,11 @@ export function RueckgaengigLeiste({ text, onRueckgaengig, onAblauf, sekunden = 
   return (
     <View style={[s.leiste, { bottom: unten }]}>
       <Text style={s.text} numberOfLines={2}>{text}</Text>
+      {zweite ? (
+        <Pressable onPress={zweite.onPress} style={({ pressed }) => [s.taste, s.zweite, pressed && { opacity: 0.7 }]} hitSlop={6}>
+          <Text style={[s.tasteText, { color: '#fff' }]}>{zweite.text}</Text>
+        </Pressable>
+      ) : null}
       <Pressable onPress={onRueckgaengig} style={({ pressed }) => [s.taste, pressed && { opacity: 0.7 }]} hitSlop={6}>
         <Text style={s.tasteText}>↺ Rückgängig</Text>
       </Pressable>
@@ -36,5 +43,6 @@ const s = StyleSheet.create({
   },
   text: { flex: 1, color: '#fff', fontSize: groessen.schrift, fontWeight: '600' },
   taste: { backgroundColor: '#FBBF24', borderRadius: 10, paddingHorizontal: 14, minHeight: 52, justifyContent: 'center' },
+  zweite: { backgroundColor: '#EA580C' },
   tasteText: { color: '#111827', fontSize: groessen.schrift, fontWeight: '800' },
 });

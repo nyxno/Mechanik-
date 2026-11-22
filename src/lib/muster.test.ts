@@ -114,3 +114,13 @@ test('Einmalig: heute, am Wochenende Montag', () => {
   assert.equal(heuteOderMontag('2026-11-21'), '2026-11-23'); // Sa -> Mo
   assert.equal(heuteOderMontag('2026-11-22'), '2026-11-23'); // So -> Mo
 });
+
+import { hinweiseErstellen } from './hinweise';
+
+test('Hinweis-Schlüssel ändert sich bei neuem Mangel (ausgeblendet -> kommt wieder)', () => {
+  const basis = { eintraege: [{ id: 'a', name: 'Therme', zusatzinfo: '', naechster: null }], zeitpunkte: [], standardUhrzeit: '07:00', heuteIso: '2026-11-22' };
+  const zwei = hinweiseErstellen({ ...basis, maengel: [{ eintragId: 'a', datum: '2026-10-01', notiz: 'x' }, { eintragId: 'a', datum: '2026-11-01', notiz: 'x' }] });
+  const drei = hinweiseErstellen({ ...basis, maengel: [{ eintragId: 'a', datum: '2026-09-01', notiz: 'x' }, { eintragId: 'a', datum: '2026-10-01', notiz: 'x' }, { eintragId: 'a', datum: '2026-11-01', notiz: 'x' }] });
+  assert.equal(zwei[0].schluessel, 'mangel:a:2');
+  assert.notEqual(zwei[0].schluessel, drei[0].schluessel);
+});
