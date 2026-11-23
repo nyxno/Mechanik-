@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in Version 0.7, 26–29 in **Version 0.8** umgesetzt (✅). Nichts offen.
+**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in Version 0.7, 26–29 in Version 0.8 umgesetzt (✅). Punkt 30 ist offen (Fehler).
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -190,4 +190,13 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Hitze-/Staubstunden auch **nachträglich** bei einer erledigten Arbeit eintragen (im Verlauf antippen).
 - Nach „✓ Heute erledigt“ direkt eine Taste „⏱ Zulagen“ in der Rückgängig-Leiste.
 - Im Formular „Durchführung erfassen“ stehen die Zulagen weiter oben.
+
+## 30. FEHLER Kalender (gemeldet am Handy)
+- Meldung: Kalender „macht gar nichts“ (Tag antippen, ✓/⏱-Markierungen) und **Datum/Wochentage falsch**.
+- Vermutete Ursache Wochentage: Das Raster nutzt Zellen mit Breite 100/7 % in einer umbrechenden Reihe.
+  Auf Android-Handys wird beim Runden auf ganze Bildpunkte die Summe größer als die Breite → nur
+  6 Tage pro Zeile → alle Tage rutschen unter den falschen Wochentag. (Im Browser fällt das nicht auf.)
+- Lösung: Raster fest in 7 Spalten je Woche aufbauen (eine Zeile pro Woche, Zellen mit flex: 1).
+- Tagesansicht prüfen und robuster machen; App-Version in den Einstellungen anzeigen,
+  damit klar ist, welche Version installiert ist.
 
