@@ -1,6 +1,6 @@
 // Datensicherung: alle Daten als eine Datei speichern/teilen (z. B. Google Drive, E-Mail) und wieder einspielen.
-// Fotos sind NICHT enthalten (zu groß) – nur die Daten.
-import { File, Paths } from 'expo-file-system';
+// Wahlweise mit Fotos (Datei wird dann deutlich größer).
+import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import type { SQLiteDatabase } from 'expo-sqlite';
@@ -8,7 +8,7 @@ import { heute } from './datum';
 import { elternZuerst, Sicherung, TABELLEN } from './sicherungFormat';
 export * from './sicherungFormat';
 
-export async function sicherungErstellen(db: SQLiteDatabase): Promise<{ datei: string; anzahl: number }> {
+export async function sicherungErstellen(db: SQLiteDatabase, mitFotos = false): Promise<{ datei: string; anzahl: number; fotos: number }> {
   const v = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const tabellen: Sicherung['tabellen'] = {};
   let anzahl = 0;
@@ -17,15 +17,30 @@ export async function sicherungErstellen(db: SQLiteDatabase): Promise<{ datei: s
     anzahl += tabellen[t].length;
   }
   const s: Sicherung = { app: 'wartungsapp', dbVersion: v?.user_version ?? 0, erstellt: new Date().toISOString(), tabellen };
-  const f = new File(Paths.cache, `Wartung-Sicherung-${heute()}.json`);
+  const f = new File(Paths.cache, `Wartung-Sicherung-${heute()}${mitFotos ? '-mit-Fotos' : ''}.json`);
   if (f.exists) f.delete();
   f.create();
-  await f.write(JSON.stringify(s));
+  // Stückweise schreiben, damit auch viele Fotos nicht den Speicher sprengen
+  const kopf = JSON.stringify(s);
+  let fotos = 0;
+  if (!mitFotos) {
+    await f.write(kopf);
+  } else {
+    await f.write(kopf.slice(0, -1) + ',"fotos":{');
+    const dateien = await db.getAllAsync<{ datei: string }>('SELECT DISTINCT datei FROM fotos WHERE deleted_at IS NULL');
+    for (const { datei } of dateien) {
+      const bild = new File(Paths.document, 'fotos', datei);
+      if (!bild.exists) continue;
+      await f.write(`${fotos ? ',' : ''}${JSON.stringify(datei)}:"${await bild.base64()}"`, { append: true });
+      fotos++;
+    }
+    await f.write('}}', { append: true });
+  }
   if (await Sharing.isAvailableAsync()) {
     await Sharing.shareAsync(f.uri, { mimeType: 'application/json', dialogTitle: 'Sicherung speichern oder senden' });
   }
   await db.runAsync("INSERT OR REPLACE INTO einstellungen (schluessel, wert) VALUES ('letzte_sicherung', ?)", heute());
-  return { datei: f.uri, anzahl };
+  return { datei: f.uri, anzahl, fotos };
 }
 
 /** Datei auswählen und lesen. null = abgebrochen. */
@@ -55,6 +70,18 @@ export async function sicherungEinspielen(db: SQLiteDatabase, s: Sicherung): Pro
       }
     }
   });
+  // Fotos zurückschreiben
+  if (s.fotos) {
+    const ordner = new Directory(Paths.document, 'fotos');
+    ordner.create({ intermediates: true, idempotent: true });
+    for (const [datei, b64] of Object.entries(s.fotos)) {
+      if (!/^[\w.-]+$/.test(datei)) continue; // nur einfache Dateinamen
+      const bild = new File(ordner, datei);
+      if (bild.exists) bild.delete();
+      bild.create();
+      await bild.write(b64, { encoding: 'base64' });
+    }
+  }
   return anzahl;
 }
 

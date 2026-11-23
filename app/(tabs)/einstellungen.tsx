@@ -64,12 +64,19 @@ export default function Einstellungen() {
         hinweis="Wird bei jeder Durchführung automatisch eingetragen (änderbar)."
       />
  <Taste titel="📊 Monatsstatistik" onPress={() => router.push('/statistik')} art="sekundaer" klein style={{ marginBottom: 10 }} />
-      <Taste titel="💾 Sicherung erstellen" art="sekundaer" klein style={{ marginBottom: 10 }} onPress={async () => {
-        try {
-          const r = await sicherungErstellen(db);
-          laden();
-          Alert.alert('Sicherung erstellt', `${r.anzahl} Datensätze gesichert. Speichere die Datei z. B. in Google Drive oder schick sie dir per E-Mail.\n\nHinweis: Fotos sind nicht enthalten.`);
-        } catch (e) { Alert.alert('Sicherung fehlgeschlagen', String(e)); }
+      <Taste titel="💾 Sicherung erstellen" art="sekundaer" klein style={{ marginBottom: 10 }} onPress={() => {
+        const los = async (mitFotos: boolean) => {
+          try {
+            const r = await sicherungErstellen(db, mitFotos);
+            laden();
+            Alert.alert('Sicherung erstellt', `${r.anzahl} Datensätze${mitFotos ? ` und ${r.fotos} Fotos` : ''} gesichert. Speichere die Datei z. B. in Google Drive oder schick sie dir per E-Mail.`);
+          } catch (e) { Alert.alert('Sicherung fehlgeschlagen', String(e)); }
+        };
+        Alert.alert('Sicherung erstellen', 'Mit Fotos wird die Datei deutlich größer (je Foto ca. 0,5 MB).', [
+          { text: 'Abbrechen', style: 'cancel' },
+          { text: 'Nur Daten', onPress: () => los(false) },
+          { text: 'Mit Fotos', onPress: () => los(true) },
+        ]);
       }} />
       <Text style={[s.hinweis, { marginTop: -4 }, !gesichert && { color: farben.gelb, fontWeight: '700' }]}>
         {gesichert ? `Letzte Sicherung: ${formatDeutsch(gesichert)}` : '⚠ Noch nie gesichert – empfohlen, einmal im Monat.'}
@@ -88,7 +95,7 @@ export default function Einstellungen() {
               const n = await sicherungEinspielen(db, s);
               await erinnerungenNeuPlanen(db);
               laden();
-              Alert.alert('Fertig', `${n} Datensätze eingespielt.`);
+              Alert.alert('Fertig', `${n} Datensätze${s.fotos ? ` und ${Object.keys(s.fotos).length} Fotos` : ''} eingespielt.`);
             } },
           ]);
         } catch (e) { Alert.alert('Fehler beim Einspielen', String(e)); }

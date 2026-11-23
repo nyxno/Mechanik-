@@ -108,7 +108,7 @@ export default function Kategorien() {
               {item.ebene === 1 ? <Text style={s.pfeilchen}>↳</Text> : null}
               <View style={[s.punkt, { backgroundColor: item.farbe ?? farben.grau }]} />
               <Pressable onPress={() => { setBearbeite(item); setName(item.name); setUnterName(''); }} style={({ pressed }) => [s.namensFeld, pressed && { opacity: 0.6 }]}>
-                <Text style={s.name}>{item.name}</Text>
+                <Text style={[s.name, item.ebene === 1 && { fontSize: groessen.schrift }]} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
                 <Text style={s.anzahl}>{item.anzahl ?? 0} Eintr{item.anzahl === 1 ? 'ag' : 'äge'}</Text>
               </Pressable>
               <Pfeil text="▲" aus={pos <= 0} onPress={async () => { await kategorieVerschieben(db, item.id, -1); laden(); }} />

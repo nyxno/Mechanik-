@@ -7,6 +7,8 @@ export interface Sicherung {
   dbVersion: number;
   erstellt: string;
   tabellen: Record<string, Record<string, unknown>[]>;
+  /** Optional: Fotos als Base64, Schlüssel = Dateiname im Ordner "fotos". */
+  fotos?: Record<string, string>;
 }
 
 /** Prüft eine Sicherungsdatei. Gibt eine Fehlermeldung oder null zurück. */

@@ -87,6 +87,12 @@ export default function Statistik() {
         <Kachel symbol="✓" wert={String(st.arbeiten)} text="Arbeiten erledigt" unter={vergleich(st.arbeiten, vst.arbeiten, vorName, false)} />
       </View>
 
+      {st.stunden > 0 ? (
+        <Abschnitt titel="📈 Zulagen pro Tag">
+          <TagesSaeulen jahr={monat.j} monat={monat.m} tage={st.proTag} />
+        </Abschnitt>
+      ) : null}
+
       {st.direktStunden > 0 ? <Text style={s.hinweis}>davon {stundenText(st.direktStunden)} über die Zulagen-Taste eingetragen</Text> : null}
 
       {st.arbeiten === 0 && st.stunden === 0 ? (
@@ -180,6 +186,33 @@ function vergleich(jetzt: number, vorher: number, vorName: string, stunden: bool
   return d === 0 ? `gleich wie ${vorName}` : `${d > 0 ? '▲ +' : '▼ −'}${t} zu ${vorName}`;
 }
 
+/** Säulen: Zulagenstunden (Hitze + Staub) für jeden Tag des Monats. */
+function TagesSaeulen({ jahr, monat, tage }: { jahr: number; monat: number; tage: { datum: string; hitze: number; staub: number }[] }) {
+  const { von, bis } = monatsGrenzen(jahr, monat);
+  const anzahl = Number(bis.slice(8, 10));
+  const proTag = new Map(tage.map((t) => [Number(t.datum.slice(8, 10)), t.hitze + t.staub]));
+  const max = Math.max(0.5, ...proTag.values());
+  const heuteTag = heute().slice(0, 7) === von.slice(0, 7) ? Number(heute().slice(8, 10)) : 0;
+  return (
+    <View>
+      <Text style={s.saeulenMax}>höchster Tag: {stundenText(max)}</Text>
+      <View style={s.saeulen}>
+        {Array.from({ length: anzahl }, (_, i) => i + 1).map((t) => {
+          const w = proTag.get(t) ?? 0;
+          return (
+            <View key={t} style={s.saeulenSpalte}>
+              <View style={[s.saeule, { height: `${(w / max) * 100}%`, backgroundColor: w ? '#EA580C' : 'transparent' }, t === heuteTag && { borderWidth: 2, borderColor: farben.text }]} />
+            </View>
+          );
+        })}
+      </View>
+      <View style={s.saeulenAchse}>
+        {[1, 8, 15, 22, anzahl].map((t) => <Text key={t} style={s.achsenText}>{t}.</Text>)}
+      </View>
+    </View>
+  );
+}
+
 function Kachel({ symbol, wert, text, unter }: { symbol: string; wert: string; text: string; unter: string }) {
   return (
     <View style={s.kachel}>
@@ -249,6 +282,12 @@ const s = StyleSheet.create({
   balkenWert: { fontSize: groessen.schriftKlein, fontWeight: '700', color: farben.textLeicht },
   spur: { height: 14, borderRadius: 4, backgroundColor: farben.grauHell, overflow: 'hidden' },
   balken: { height: '100%', borderRadius: 4 },
+  saeulenMax: { fontSize: sz(12), color: farben.textLeicht, marginBottom: 4, textAlign: 'right' },
+  saeulen: { flexDirection: 'row', height: 90, alignItems: 'flex-end', gap: 2, borderBottomWidth: 1, borderBottomColor: farben.rahmen },
+  saeulenSpalte: { flex: 1, height: '100%', justifyContent: 'flex-end' },
+  saeule: { width: '100%', borderTopLeftRadius: 3, borderTopRightRadius: 3, minHeight: 0 },
+  saeulenAchse: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  achsenText: { fontSize: sz(12), color: farben.textLeicht },
   wochentage: { flexDirection: 'row', gap: 6, height: 130 },
   wtSpalte: { flex: 1, alignItems: 'center' },
   wtZahl: { fontSize: sz(13), fontWeight: '700', color: farben.text, height: 18 },

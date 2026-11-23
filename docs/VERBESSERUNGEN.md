@@ -10,7 +10,7 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 „Übernahme in die nächste Runde“ und wird dort zuerst erledigt.
 
 ## Übernahme in die nächste Runde
-- Fotos in die Sicherung aufnehmen (z. B. als ZIP) – derzeit nur Daten.
+- (nichts offen)
 
 ## Runde 1 – 22.11.2026, 22:22 (Version 0.9)
 
@@ -51,4 +51,18 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
   (z. B. auf einem neuen Handy). Sicherungen aus älteren App-Versionen funktionieren.
 - Anzeige **„Letzte Sicherung: …“** bzw. Warnung „Noch nie gesichert“.
 - Hinweis: **Fotos sind noch nicht in der Sicherung** – kommt in einer späteren Runde.
+
+## Runde 4 – 23.11.2026, 1:22 (Version 0.12)
+
+**Aus Runde 3 übernommen – erledigt**
+- **Sicherung mit Fotos:** Beim Erstellen wählen: „Nur Daten“ (klein) oder „Mit Fotos“ (groß).
+  Beim Einspielen werden die Fotos wiederhergestellt. Die Datei wird stückweise geschrieben,
+  damit auch viele Fotos das Handy nicht überlasten.
+
+**Gefunden & behoben**
+- Kategorien-Seite: Lange Unterkategorie-Namen (z. B. „Feuerlöscher“) brachen mitten im Wort um.
+
+**Neu**
+- **Statistik: Säulen-Grafik „📈 Zulagen pro Tag“** – auf einen Blick, an welchen Tagen viele
+  Hitze-/Staubstunden anfielen; der heutige Tag ist umrandet.
 
