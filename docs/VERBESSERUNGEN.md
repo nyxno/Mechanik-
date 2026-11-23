@@ -66,3 +66,14 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 - **Statistik: Säulen-Grafik „📈 Zulagen pro Tag“** – auf einen Blick, an welchen Tagen viele
   Hitze-/Staubstunden anfielen; der heutige Tag ist umrandet.
 
+## Runde 5 – 23.11.2026, 2:22 (Version 0.13)
+
+Diesmal echte Abläufe durchgespielt (nicht nur Bildschirme): schnell abhaken → Zulagen nachtragen →
+Ampel-Filter → Durchführung mit Mangel und Stunden speichern.
+
+**Gefunden & behoben**
+- **Rückgängig-Leiste:** Nach „✓ Heute erledigt“ war die Taste „Rückgängig“ rechts abgeschnitten
+  (seit die Taste „⏱ Zulagen“ dazukam). → Text oben, beide Tasten groß darunter.
+- **Missverständlicher Status:** Ein Gerät mit offenem Mangel stand oben nur grün „In Ordnung“.
+  → Zusätzliches Schild **„⚠ Mangel offen“** bzw. **„⛔ Außer Betrieb“** direkt im Status.
+

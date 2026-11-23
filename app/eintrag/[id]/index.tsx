@@ -20,7 +20,7 @@ import { FotoAnsicht } from '@/components/FotoAnsicht';
 import { FotoLeiste } from '@/components/FotoLeiste';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Taste } from '@/components/Taste';
-import { ergebnisFarben, farben, groessen, statusFarben } from '@/theme';
+import { ergebnisFarben, farben, groessen, statusFarben, sz } from '@/theme';
 
 export default function EintragDetail() {
   const db = useSQLiteContext();
@@ -86,9 +86,14 @@ export default function EintragDetail() {
       <Stack.Screen options={{ title: eintrag.kategorie_name }} />
       <View style={[s.status, { backgroundColor: sf.hinter, borderColor: sf.vorder }]}>
         <Text style={s.name}>{eintrag.name}</Text>
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <StatusBadge status={f.status} />
           <GebietMarke name={eintrag.kategorie_name} farbe={eintrag.kategorie_farbe} />
+          {offeneMaengel.length ? (
+            <View style={[s.mangelMarke, { backgroundColor: ergebnisFarben(offeneMaengel.some((d) => d.ergebnis === 'ausser_betrieb') ? 'ausser_betrieb' : 'maengel').vorder }]}>
+              <Text style={s.mangelMarkeText}>{offeneMaengel.some((d) => d.ergebnis === 'ausser_betrieb') ? '⛔ Außer Betrieb' : '⚠ Mangel offen'}</Text>
+            </View>
+          ) : null}
         </View>
         <Text style={[s.faellig, { color: sf.vorder }]}>{f.text}</Text>
         {f.naechster ? (
@@ -217,6 +222,8 @@ const s = StyleSheet.create({
   zuletzt: { color: farben.primaer, fontWeight: '700', fontSize: groessen.schriftKlein },
   verlaufText: { fontSize: groessen.schrift, color: farben.text, lineHeight: 26 },
   hinweis: { color: farben.grau, fontSize: groessen.schriftKlein, marginTop: 4 },
+  mangelMarke: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  mangelMarkeText: { color: '#fff', fontWeight: '800', fontSize: sz(13) },
   mangel: { borderWidth: 2, borderRadius: groessen.radius, padding: 14, marginBottom: 12, gap: 8 },
   mangelTitel: { fontSize: groessen.schrift, fontWeight: '800' },
   mangelText: { fontSize: groessen.schrift, color: farben.text },
