@@ -48,7 +48,7 @@ export default function MaterialBearbeiten() {
     if (!name.trim()) return Alert.alert('Name fehlt', 'Bitte eingeben, welches Material, z. B. „Dichtung 1/2 Zoll“.');
     const mid = await materialSpeichern(db, neu ? null : id, { name, menge, einheit, notiz, eintrag_id: geraet });
     for (const f of neueFotos) await fotoSpeichern(db, { materialId: mid }, f);
-    router.back();
+    if (router.canGoBack()) router.back(); else router.replace('/material');
   };
 
   const fotoHinzu = async (fn: () => Promise<string[]>) => {
@@ -128,7 +128,7 @@ export default function MaterialBearbeiten() {
             { text: 'Löschen', style: 'destructive', onPress: async () => {
               fotos.forEach((f) => fotoDateiLoeschen(f.datei));
               await materialLoeschen(db, id);
-              router.back();
+              if (router.canGoBack()) router.back(); else router.replace('/material');
             } },
           ])} />
       ) : null}
@@ -143,7 +143,7 @@ const s = StyleSheet.create({
   knopf: { width: 64, height: 64, borderRadius: 14, backgroundColor: farben.grauHell, borderWidth: 2, borderColor: farben.rahmen, alignItems: 'center', justifyContent: 'center' },
   plus: { backgroundColor: farben.primaer, borderColor: farben.primaer },
   knopfText: { fontSize: sz(32), fontWeight: '900', color: farben.text, marginTop: -2 },
-  mengeFeld: { flex: 1, height: 64, borderRadius: 14, borderWidth: 2, borderColor: farben.rahmen, backgroundColor: farben.karte, textAlign: 'center', fontSize: sz(28), fontWeight: '800', color: farben.text },
+  mengeFeld: { flex: 1, flexBasis: 0, minWidth: 0, height: 64, borderRadius: 14, borderWidth: 2, borderColor: farben.rahmen, backgroundColor: farben.karte, textAlign: 'center', fontSize: sz(28), fontWeight: '800', color: farben.text },
   einheiten: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: groessen.abstand },
   chip: { backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, borderRadius: 999, paddingHorizontal: 16, minHeight: 48, justifyContent: 'center' },
   chipAktiv: { backgroundColor: farben.primaer, borderColor: farben.primaer },

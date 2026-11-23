@@ -77,3 +77,17 @@ Ampel-Filter → Durchführung mit Mangel und Stunden speichern.
 - **Missverständlicher Status:** Ein Gerät mit offenem Mangel stand oben nur grün „In Ordnung“.
   → Zusätzliches Schild **„⚠ Mangel offen“** bzw. **„⛔ Außer Betrieb“** direkt im Status.
 
+## Runde 6 (letzte) – 23.11.2026, 3:22 (Version 0.14)
+
+Abläufe durchgespielt: neuen Eintrag mit automatischer Zuordnung anlegen, Material erfassen, Erledigt-Ordner.
+
+**Gefunden & behoben**
+- **Material: „＋“-Taste bei der Menge** war rechts aus dem Bildschirm geschoben (Zahlenfeld zu breit).
+- **Material speichern/löschen:** „Zurück“ funktioniert jetzt auch, wenn man direkt hingesprungen ist.
+- **Neuer Eintrag:** Beim ersten Termin stand „(fester Termin)“ – verwirrend, entfällt jetzt bis zur
+  ersten Durchführung.
+
+## Offen für später (Ideen aus den Runden)
+- Zulagen-Monatsliste als PDF fürs Lohnbüro.
+- Mehrere Handys verbinden (Konten, Abgleich) – siehe Fragen im Chat.
+

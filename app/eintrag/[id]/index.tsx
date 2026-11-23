@@ -98,7 +98,7 @@ export default function EintragDetail() {
         <Text style={[s.faellig, { color: sf.vorder }]}>{f.text}</Text>
         {f.naechster ? (
           <Text style={s.termin}>
-            📅 {formatMitTag(f.naechster)}  🕒 {uhr} Uhr{eintrag.naechster_termin && !eintrag.einmalig ? '  (fester Termin)' : ''}
+            📅 {formatMitTag(f.naechster)}  🕒 {uhr} Uhr{eintrag.naechster_termin && !eintrag.einmalig && eintrag.letzte_durchfuehrung ? '  (fester Termin)' : ''}
           </Text>
         ) : null}
         {f.verschobenVon ? <Text style={s.klein}>Wochenende: vom {formatMitTag(f.verschobenVon)} verschoben</Text> : null}
