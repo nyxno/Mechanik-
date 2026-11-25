@@ -204,8 +204,9 @@ export async function durchfuehrungAnlegen(db: SQLiteDatabase, d: NeueDurchfuehr
   let behobene: string[] = [];
   if (ergebnis === 'ok') {
     behobene = (await db.getAllAsync<{ id: string }>(
-      `SELECT id FROM durchfuehrungen WHERE eintrag_id = ? AND deleted_at IS NULL AND ergebnis <> 'ok' AND mangel_behoben_am IS NULL`,
-      d.eintragId)).map((r) => r.id);
+      `SELECT id FROM durchfuehrungen WHERE eintrag_id = ? AND deleted_at IS NULL AND ergebnis <> 'ok' AND mangel_behoben_am IS NULL
+          AND datum <= ?`, // nur Mängel, die es zum Prüfdatum schon gab (Nachtrag mit älterem Datum behebt keine neueren)
+      d.eintragId, d.datum)).map((r) => r.id);
   }
   await db.withTransactionAsync(async () => {
     await db.runAsync(
@@ -444,9 +445,21 @@ export async function eintragSchlummern(db: SQLiteDatabase, id: string, bis: str
 
 export async function durchfuehrungLoeschen(db: SQLiteDatabase, id: string): Promise<void> {
   const t = jetztIso();
+  const d = await db.getFirstAsync<{ eintrag_id: string; datum: string; ergebnis: string }>(
+    'SELECT eintrag_id, datum, ergebnis FROM durchfuehrungen WHERE id = ?', id);
   await db.withTransactionAsync(async () => {
     await db.runAsync('UPDATE fotos SET deleted_at = ? WHERE durchfuehrung_id = ? AND deleted_at IS NULL', t, id);
     await db.runAsync('UPDATE durchfuehrungen SET deleted_at = ?, updated_at = ? WHERE id = ?', t, t, id);
+    // War es eine "In Ordnung"-Prüfung, hat sie Mängel als behoben markiert – diese wieder öffnen,
+    // sofern keine andere "In Ordnung"-Prüfung am selben Tag existiert.
+    if (d && d.ergebnis === 'ok') {
+      await db.runAsync(
+        `UPDATE durchfuehrungen SET mangel_behoben_am = NULL, updated_at = ?
+          WHERE eintrag_id = ? AND deleted_at IS NULL AND ergebnis <> 'ok' AND mangel_behoben_am = ?
+            AND NOT EXISTS (SELECT 1 FROM durchfuehrungen o WHERE o.eintrag_id = ? AND o.deleted_at IS NULL
+                              AND o.ergebnis = 'ok' AND o.datum = ? AND o.id <> ?)`,
+        t, d.eintrag_id, d.datum, d.eintrag_id, d.datum, id);
+    }
   });
 }
 

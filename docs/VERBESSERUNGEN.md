@@ -10,8 +10,7 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 „Übernahme in die nächste Runde“ und wird dort zuerst erledigt.
 
 ## Übernahme in die nächste Runde
-- Expo-Pakete auf die neuesten Fehlerbehebungs-Versionen bringen (expo, expo-file-system, expo-router, expo-sqlite) – getrennt vom neuen Baustein, damit ein Bau-Fehler eindeutig zuzuordnen ist.
-- Gründliche Code-Durchsicht auf Fehler (Fehlersuche-Runden).
+- Weitere Code-Durchsicht: Erinnerungen/Benachrichtigungen, Sicherung einspielen.
 
 ## Runde 1 – 22.11.2026, 22:22 (Version 0.9)
 
@@ -101,4 +100,16 @@ Abläufe durchgespielt: neuen Eintrag mit automatischer Zuordnung anlegen, Mater
 - Neue Felder **Artikelnummer** und **„Mein Name“**; Suche findet alle drei. Etikett-Foto wird mitgespeichert.
 - Bewusst schlanke Lösung gewählt: Ein anderes Paket hätte 5 Schrift-Modelle (u. a. Chinesisch,
   Japanisch) mitgebracht und die App stark vergrößert.
+
+## Fehlersuche-Runde 2 – 26.11.2026, 0:30 (Version 0.17)
+
+**Aus Runde 1 übernommen – erledigt**
+- Expo-Bausteine auf die neuesten Fehlerbehebungs-Versionen gebracht → Expo-Prüfung jetzt 20/20.
+
+**Gefunden & behoben (Code-Durchsicht)**
+- **Mängel fälschlich „behoben“:** Wurde eine Prüfung „In Ordnung“ mit *älterem* Datum nachgetragen,
+  galten auch Mängel als behoben, die erst *danach* festgestellt wurden. → Nur Mängel bis zum Prüfdatum.
+- **Mängel blieben „behoben“ nach Löschen:** Wird eine „In Ordnung“-Prüfung gelöscht, sind die Mängel,
+  die sie automatisch als behoben markiert hatte, jetzt wieder offen.
+- Layout geprüft: keine weitere Stelle mit dem Kalender-Problem (Prozent-Breiten im Umbruch).
 
