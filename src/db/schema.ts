@@ -13,7 +13,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { ALTE_FARBEN, GEBIETSFARBEN } from '@/lib/farben';
 
 export const DB_NAME = 'wartungsapp.db';
-const DB_VERSION = 8;
+const DB_VERSION = 9;
 
 /** Der lokale Standard-Betrieb, solange es keine Konten gibt. */
 export const LOKALER_BETRIEB_ID = 'lokal';
@@ -250,6 +250,15 @@ export async function migrieren(db: SQLiteDatabase): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_fotos_magazin ON fotos(magazin_id, deleted_at);
     `);
     version = 8;
+  }
+
+  if (version === 8) {
+    // Version 9: Magazin – Artikelnummer und eigener Name (Alltagsbegriff).
+    await db.execAsync(`
+      ALTER TABLE magazin ADD COLUMN artikelnummer TEXT NOT NULL DEFAULT '';
+      ALTER TABLE magazin ADD COLUMN eigener_name TEXT NOT NULL DEFAULT '';
+    `);
+    version = 9;
   }
 
   // Spätere Änderungen am Datenbank-Aufbau kommen hier als weitere "if (version === N)"-Blöcke.

@@ -24,7 +24,7 @@ export default function Magazin() {
   const treffer = useMemo(() => {
     const t = suche.trim().toLowerCase();
     if (!t) return liste;
-    return liste.filter((m) => [m.name, m.regal, m.fach, m.paternoster, m.notiz].some((x) => x.toLowerCase().includes(t)));
+    return liste.filter((m) => [m.name, m.artikelnummer, m.eigener_name, m.regal, m.fach, m.paternoster, m.notiz].some((x) => x.toLowerCase().includes(t)));
   }, [liste, suche]);
 
   return (
@@ -35,13 +35,16 @@ export default function Magazin() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={s.liste}
         ListHeaderComponent={
-          <TextInput value={suche} onChangeText={setSuche} placeholder="🔍 Wo ist …? (z. B. Loctite)" placeholderTextColor={farben.grau} style={s.suche} />
+          <TextInput value={suche} onChangeText={setSuche} placeholder="🔍 Wo ist …? Name, Art.-Nr. oder eigener Name" placeholderTextColor={farben.grau} style={s.suche} />
         }
         renderItem={({ item }) => (
           <Pressable onPress={() => router.push({ pathname: '/magazin/[id]', params: { id: item.id } })} style={({ pressed }) => [s.zeile, pressed && { opacity: 0.7 }]}>
             {item.erstes_foto ? <Image source={{ uri: fotoUri(item.erstes_foto) }} style={s.bild} contentFit="cover" /> : <View style={[s.bild, s.keinBild]}><Text style={{ fontSize: sz(24) }}>🗄</Text></View>}
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={s.name}>{item.name}</Text>
+              {item.eigener_name || item.artikelnummer ? (
+                <Text style={s.klein} numberOfLines={1}>{[item.eigener_name && `„${item.eigener_name}“`, item.artikelnummer && `Art.-Nr. ${item.artikelnummer}`].filter(Boolean).join(' · ')}</Text>
+              ) : null}
               {ortText(item) ? <Text style={s.ort}>📍 {ortText(item)}</Text> : <Text style={s.klein}>Kein Lagerort eingetragen</Text>}
               {item.notiz ? <Text style={s.klein} numberOfLines={1}>{item.notiz}</Text> : null}
             </View>

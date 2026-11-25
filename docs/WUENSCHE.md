@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in Version 0.7, 26–29 in Version 0.8 umgesetzt (✅). Punkte 30–34 in Version 0.15 umgesetzt (✅). Punkt 35 ist offen.
+**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in Version 0.7, 26–29 in Version 0.8 umgesetzt (✅). Punkte 30–34 in Version 0.15 umgesetzt (✅). Punkt 35 in **Version 0.16** umgesetzt (✅). Nichts offen.
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -223,9 +223,10 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Je Eintrag: **Name** (z. B. Loctite 243), **Regal**, **Fach**, **Paternoster** (Nr./Ebene), Notiz, Fotos.
 - Schnelle Suche („Wo ist …?“), lernende Vorschläge.
 
-## 35. Magazin: Etikett fotografieren → Bezeichnung und Artikelnummer automatisch
+## ✅ 35. Magazin: Etikett fotografieren → Bezeichnung und Artikelnummer automatisch
 - Im Magazin-Formular Taste **„📷 Etikett lesen“**: Foto vom Etikett, die App erkennt den Text
-  (am Handy, ohne Internet, Texterkennung von Google ML Kit).
+  (am Handy, Texterkennung von Google ML Kit über die Play-Dienste; beim allerersten Mal lädt Android
+  das kleine Modell einmalig herunter, danach ohne Internet).
 - Erkannte Zeilen als große Tasten anzeigen → antippen übernimmt sie in **Bezeichnung** oder **Artikelnummer**.
   Artikelnummer automatisch vorschlagen (Zeile mit „Art.-Nr.“, „Art.Nr“, „Artikel“, „Best.-Nr.“ oder langer Ziffernfolge).
 - Neues Feld **„Artikelnummer“** und neues Feld **„Mein Name“** (eigener Alltagsbegriff, z. B. „Schraubensicherung blau“).

@@ -397,19 +397,20 @@ export async function magazinEinzeln(db: SQLiteDatabase, id: string): Promise<Ma
   return db.getFirstAsync<MagazinTeil>(`${MAGAZIN_SQL} AND m.id = ?`, betrieb(), id);
 }
 
-export interface MagazinDaten { name: string; regal: string; fach: string; paternoster: string; notiz: string }
+export interface MagazinDaten { name: string; artikelnummer: string; eigener_name: string; regal: string; fach: string; paternoster: string; notiz: string }
 
 export async function magazinSpeichern(db: SQLiteDatabase, id: string | null, d: MagazinDaten): Promise<string> {
   const t = jetztIso();
-  const w = [d.name.trim(), d.regal.trim(), d.fach.trim(), d.paternoster.trim(), d.notiz.trim()];
+  const w = [d.name.trim(), d.artikelnummer.trim(), d.eigener_name.trim(), d.regal.trim(), d.fach.trim(), d.paternoster.trim(), d.notiz.trim()];
   if (id) {
-    await db.runAsync('UPDATE magazin SET name = ?, regal = ?, fach = ?, paternoster = ?, notiz = ?, updated_at = ? WHERE id = ?', ...w, t, id);
+    await db.runAsync('UPDATE magazin SET name = ?, artikelnummer = ?, eigener_name = ?, regal = ?, fach = ?, paternoster = ?, notiz = ?, updated_at = ? WHERE id = ?', ...w, t, id);
   } else {
     id = neueId();
-    await db.runAsync('INSERT INTO magazin (id, betrieb_id, name, regal, fach, paternoster, notiz, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    await db.runAsync('INSERT INTO magazin (id, betrieb_id, name, artikelnummer, eigener_name, regal, fach, paternoster, notiz, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       id, betrieb(), ...w, t, t);
   }
   await vorschlagLernen(db, 'magazin', d.name);
+  await vorschlagLernen(db, 'magazin', d.eigener_name);
   await vorschlagLernen(db, 'regal', d.regal);
   await vorschlagLernen(db, 'paternoster', d.paternoster);
   return id;

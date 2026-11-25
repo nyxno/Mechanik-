@@ -82,6 +82,9 @@ export interface Material {
 export interface MagazinTeil {
   id: string;
   name: string;
+  artikelnummer: string;
+  /** Eigener Alltagsbegriff, z. B. "Schraubensicherung blau" */
+  eigener_name: string;
   regal: string;
   fach: string;
   paternoster: string;

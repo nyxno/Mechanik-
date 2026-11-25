@@ -10,7 +10,8 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 „Übernahme in die nächste Runde“ und wird dort zuerst erledigt.
 
 ## Übernahme in die nächste Runde
-- (nichts offen)
+- Expo-Pakete auf die neuesten Fehlerbehebungs-Versionen bringen (expo, expo-file-system, expo-router, expo-sqlite) – getrennt vom neuen Baustein, damit ein Bau-Fehler eindeutig zuzuordnen ist.
+- Gründliche Code-Durchsicht auf Fehler (Fehlersuche-Runden).
 
 ## Runde 1 – 22.11.2026, 22:22 (Version 0.9)
 
@@ -90,4 +91,14 @@ Abläufe durchgespielt: neuen Eintrag mit automatischer Zuordnung anlegen, Mater
 ## Offen für später (Ideen aus den Runden)
 - Zulagen-Monatsliste als PDF fürs Lohnbüro.
 - Mehrere Handys verbinden (Konten, Abgleich) – siehe Fragen im Chat.
+
+## Fehlersuche-Runde 1 – 25.11.2026, 23:30 (Version 0.16)
+
+**Zuerst Wunsch 35 (vom Nutzer für diese Runde gewünscht): Magazin – Etikett lesen**
+- Taste **„📷 Etikett lesen“**: Foto vom Etikett, Text wird am Handy erkannt (Google ML Kit über
+  die Play-Dienste – die App wird dadurch kaum größer). Erkannte Zeilen als Liste mit Tasten
+  „Bezeichnung“ / „Art.-Nr.“; leere Felder werden automatisch vorausgefüllt.
+- Neue Felder **Artikelnummer** und **„Mein Name“**; Suche findet alle drei. Etikett-Foto wird mitgespeichert.
+- Bewusst schlanke Lösung gewählt: Ein anderes Paket hätte 5 Schrift-Modelle (u. a. Chinesisch,
+  Japanisch) mitgebracht und die App stark vergrößert.
 
