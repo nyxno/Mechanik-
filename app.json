@@ -2,7 +2,7 @@
   "expo": {
     "name": "Wartung & Prüfung",
     "slug": "wartungsapp",
-    "version": "0.14.0",
+    "version": "0.15.0",
     "scheme": "wartungsapp",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.mechanik.wartungsapp",
-      "versionCode": 14,
+      "versionCode": 15,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

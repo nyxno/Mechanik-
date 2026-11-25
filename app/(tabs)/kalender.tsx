@@ -79,8 +79,10 @@ export default function Kalender() {
         art="sekundaer" klein style={{ marginBottom: 12 }}
       />
       <View style={s.wochentage}>{TAGE.map((t) => <Text key={t} style={[s.wochentag, (t === 'Sa' || t === 'So') && { color: farben.grau }]}>{t}</Text>)}</View>
-      <View style={s.raster}>
-        {raster.map((d) => {
+      <View>
+        {[0, 1, 2, 3, 4, 5].map((w) => (
+          <View key={w} style={s.woche}>
+        {raster.slice(w * 7, w * 7 + 7).map((d) => {
           const imMonat = d >= von && d <= bis;
           const l = termine.get(d) ?? [];
           const ueber = l.some((t) => t.ueberfaellig);
@@ -108,6 +110,8 @@ export default function Kalender() {
             </Pressable>
           );
         })}
+          </View>
+        ))}
       </View>
 
       <Text style={s.tipp}>👆 Tag antippen, um zu sehen, was gemacht wurde und was geplant ist.</Text>
@@ -182,10 +186,10 @@ const s = StyleSheet.create({
   titelFeld: { flex: 1, alignItems: 'center' },
   titel: { fontSize: groessen.titel, fontWeight: '800', color: farben.text },
   unter: { fontSize: sz(13), color: farben.textLeicht },
-  wochentage: { flexDirection: 'row' },
+  wochentage: { flexDirection: 'row' }, // gleiche Spaltenaufteilung wie die Wochen
   wochentag: { flex: 1, textAlign: 'center', fontWeight: '700', color: farben.textLeicht, marginBottom: 4 },
-  raster: { flexDirection: 'row', flexWrap: 'wrap' },
-  zelle: { width: `${100 / 7}%`, height: 74, padding: 3, borderRadius: 10, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  woche: { flexDirection: 'row' }, // feste 7 Spalten pro Woche (kein Umbruch → Wochentage stimmen immer)
+  zelle: { flex: 1, minWidth: 0, height: 74, padding: 3, borderRadius: 10, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
   heute: { borderColor: farben.primaer },
   ueber: { backgroundColor: farben.rotHell },
   gewaehlt: { backgroundColor: farben.primaer },

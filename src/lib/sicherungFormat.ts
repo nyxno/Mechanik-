@@ -1,6 +1,6 @@
 // Aufbau und Prüfung einer Sicherungsdatei (ohne Handy-Funktionen, darum testbar).
 /** Reihenfolge wichtig: zuerst "Eltern", dann abhängige Tabellen. */
-export const TABELLEN = ['betriebe', 'kategorien', 'eintraege', 'durchfuehrungen', 'fotos', 'material', 'zulagen', 'einstellungen', 'vorschlaege'] as const;
+export const TABELLEN = ['betriebe', 'kategorien', 'eintraege', 'durchfuehrungen', 'fotos', 'material', 'magazin', 'zulagen', 'einstellungen', 'vorschlaege'] as const;
 
 export interface Sicherung {
   app: 'wartungsapp';

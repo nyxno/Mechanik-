@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in Version 0.7, 26–29 in Version 0.8 umgesetzt (✅). Punkte 30–34 sind offen.
+**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in Version 0.7, 26–29 in Version 0.8 umgesetzt (✅). Punkte 30–34 in **Version 0.15** umgesetzt (✅). Nichts offen.
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -191,7 +191,7 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Nach „✓ Heute erledigt“ direkt eine Taste „⏱ Zulagen“ in der Rückgängig-Leiste.
 - Im Formular „Durchführung erfassen“ stehen die Zulagen weiter oben.
 
-## 30. FEHLER Kalender (gemeldet am Handy)
+## ✅ 30. FEHLER Kalender (gemeldet am Handy)
 - Meldung: Kalender „macht gar nichts“ (Tag antippen, ✓/⏱-Markierungen) und **Datum/Wochentage falsch**.
 - Vermutete Ursache Wochentage: Das Raster nutzt Zellen mit Breite 100/7 % in einer umbrechenden Reihe.
   Auf Android-Handys wird beim Runden auf ganze Bildpunkte die Summe größer als die Breite → nur
@@ -200,16 +200,16 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Tagesansicht prüfen und robuster machen; App-Version in den Einstellungen anzeigen,
   damit klar ist, welche Version installiert ist.
 
-## 31. App-Version anzeigen
+## ✅ 31. App-Version anzeigen
 - App-Version in den Einstellungen anzeigen (damit klar ist, was installiert ist).
 - **Entschieden:** keine Update-Taste, kein Drive-Link.
 
-## 32. Morgen-Übersicht
+## ✅ 32. Morgen-Übersicht
 - Jeden Arbeitstag (Mo–Fr) zur Standard-Uhrzeit eine Benachrichtigung:
   „Heute: 3 Arbeiten, 1 überfällig“ (antippen → App öffnet die Startseite).
 - Ein-/ausschaltbar in den Einstellungen.
 
-## 33. Abteilungen + Unterkategorien direkt beim neuen Eintrag
+## ✅ 33. Abteilungen + Unterkategorien direkt beim neuen Eintrag
 - **Entschieden (Nutzer):** Ablauf beim neuen Eintrag:
   **Abteilung wählen** (z. B. KE, HE) → **wenn gewünscht Unterkategorie** (z. B. Kühlturm, Pumpe) → hinzufügen.
 - Die bisherigen „Kategorien“ heißen in der App ab jetzt **Abteilungen**, ihre Unterkategorien bleiben Unterkategorien.
@@ -218,7 +218,7 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Startseite: Filter nach Abteilung (mit Unterkategorien darunter) wie bisher.
 - Kein zusätzliches, getrenntes Abteilungs-Feld.
 
-## 34. Magazin
+## ✅ 34. Magazin
 - Neue Taste **„🗄 Magazin“**: Lagerorte von Dingen nachschlagen.
 - Je Eintrag: **Name** (z. B. Loctite 243), **Regal**, **Fach**, **Paternoster** (Nr./Ebene), Notiz, Fotos.
 - Schnelle Suche („Wo ist …?“), lernende Vorschläge.

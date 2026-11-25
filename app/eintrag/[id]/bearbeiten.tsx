@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { eintragAendern, eintragIntervall, eintragLaden, eintragLoeschen, einstellungenLaden, fotoLoeschen, fotoSpeichern, fotosZuEintrag, kategorienLaden } from '@/db/repo';
+import { eintragAendern, eintragIntervall, eintragLaden, eintragLoeschen, einstellungenLaden, fotoLoeschen, fotoSpeichern, fotosZuEintrag, kategorieAnlegen, kategorienLaden } from '@/db/repo';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
 import { STANDARD_UHRZEIT } from '@/lib/uhrzeit';
 import type { EintragMitStatus, Foto, Kategorie } from '@/db/typen';
@@ -39,6 +39,11 @@ export default function EintragBearbeiten() {
         neu={false}
         kategorien={kategorien}
         standardUhrzeit={standardUhrzeit}
+        onNeueKategorie={async (name, elternId) => {
+          const nid = await kategorieAnlegen(db, name, elternId);
+          setKategorien(await kategorienLaden(db));
+          return nid;
+        }}
         letzteDurchfuehrung={eintrag.letzte_durchfuehrung}
         start={{
           kategorie_id: eintrag.kategorie_id, name: eintrag.name, aufgabe: eintrag.aufgabe, intervall: eintragIntervall(eintrag),

@@ -5,6 +5,7 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { einstellungenLaden, einstellungenSpeichern, prueferLaden, prueferSpeichern, schriftFaktorSpeichern } from '@/db/repo';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
 import { formatDeutsch } from '@/lib/datum';
 import { testdatenAnlegen } from '@/dev/testdaten';
 import { letzteSicherung, Sicherung, sicherungAuswaehlen, sicherungEinspielen, sicherungErstellen, sicherungPruefen } from '@/lib/sicherung';
@@ -100,7 +101,7 @@ export default function Einstellungen() {
           ]);
         } catch (e) { Alert.alert('Fehler beim Einspielen', String(e)); }
       }} />
-      <Taste titel="🏷 Kategorien & Farben verwalten" onPress={() => router.push('/kategorien')} art="sekundaer" klein style={{ marginBottom: groessen.abstand }} />
+      <Taste titel="🏷 Abteilungen & Farben verwalten" onPress={() => router.push('/kategorien')} art="sekundaer" klein style={{ marginBottom: groessen.abstand }} />
 
       <Text style={s.label}>🔠 Schriftgröße</Text>
       <View style={[s.reihe, { marginBottom: 6 }]}>
@@ -157,6 +158,13 @@ export default function Einstellungen() {
       </View>
       <Text style={s.hinweis}>Du bekommst eine Meldung zur Vorwarnung und eine am Tag der Fälligkeit.</Text>
 
+      <Text style={s.label}>☀️ Morgen-Übersicht (Mo–Fr)</Text>
+      <View style={s.reihe}>
+        <Wahl aktiv={e.morgen !== false} text="An" onPress={() => aendern({ ...e, morgen: true })} />
+        <Wahl aktiv={e.morgen === false} text="Aus" onPress={() => aendern({ ...e, morgen: false })} />
+      </View>
+      <Text style={s.hinweis}>Jeden Werktag um {e.uhrzeit} Uhr eine Meldung wie „Heute: 3 Arbeiten, 1 überfällig“ – statt vieler einzelner Meldungen zur selben Uhrzeit.</Text>
+
       <View style={s.box}>
         <Text style={s.boxTitel}>Ton testen</Text>
         <Text style={s.boxText}>Taste drücken, Handy sperren – nach 5 Sekunden kommt die Meldung mit dem Signalton.</Text>
@@ -186,6 +194,7 @@ export default function Einstellungen() {
       <Pressable onPress={() => Linking.openSettings()} style={{ paddingVertical: 14 }}>
         <Text style={s.link}>Ton oder Lautstärke ändern → Android-Einstellungen der App</Text>
       </Pressable>
+      <Text style={s.version}>Wartung & Prüfung · Version {Constants.expoConfig?.version ?? '?'}</Text>
     </Bildschirm>
   );
 }
@@ -210,5 +219,6 @@ const s = StyleSheet.create({
   warnung: { backgroundColor: farben.gelbHell, borderWidth: 2, borderColor: farben.gelb },
   boxTitel: { fontSize: groessen.schrift, fontWeight: '700', color: farben.text },
   boxText: { fontSize: groessen.schriftKlein, color: farben.text, lineHeight: 22 },
+  version: { textAlign: 'center', color: farben.grau, fontSize: groessen.schriftKlein, marginTop: 12 },
   link: { color: farben.primaer, fontSize: groessen.schriftKlein, fontWeight: '600' },
 });

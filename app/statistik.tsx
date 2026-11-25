@@ -104,7 +104,7 @@ export default function Statistik() {
               onPress={(r) => router.push({ pathname: '/eintrag/[id]', params: { id: r.id } })} leer="Keine Zulagenstunden bei Arbeiten (nur über die Zulagen-Taste)." />
           </Abschnitt>
 
-          <Abschnitt titel="🏷 Nach Gebiet (Arbeiten)">
+          <Abschnitt titel="🏷 Nach Abteilung (Arbeiten)">
             <Rangliste liste={[...st.proGebiet].sort((a, b) => b.arbeiten - a.arbeiten)} wert={(r) => r.arbeiten}
               text={(r) => `${r.arbeiten}×${r.stunden > 0 ? ` · ${stundenText(r.stunden)}` : ''}`} />
           </Abschnitt>

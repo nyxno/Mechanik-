@@ -79,12 +79,25 @@ export interface Material {
   fotos_anzahl?: number;
 }
 
+export interface MagazinTeil {
+  id: string;
+  name: string;
+  regal: string;
+  fach: string;
+  paternoster: string;
+  notiz: string;
+  created_at: string;
+  updated_at: string;
+  erstes_foto?: string | null;
+}
+
 export interface Foto {
   id: string;
   betrieb_id: string;
   eintrag_id: string | null;
   durchfuehrung_id: string | null;
   material_id: string | null;
+  magazin_id: string | null;
   datei: string;
   created_at: string;
 }

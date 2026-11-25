@@ -1,7 +1,7 @@
 // Startseite: alle offenen Einträge nach Fälligkeit sortiert, mit Ampelfarben, Kategorie-Filter und Suche.
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import {
   durchfuehrungAnlegen, durchfuehrungRueckgaengig, eintraegeLaden, eintragFaelligkeit, hinweiseLaden, kategorienLaden, materialLaden,
@@ -121,6 +121,25 @@ export default function Uebersicht() {
 
   const sucheLernen = () => { if (suche.trim().length >= 2) vorschlagLernen(db, 'suche', suche); };
 
+  // Erledigt und Hinweise klein oben rechts in der Kopfzeile
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={s.kopfIcons}>
+          {anzahlHinweise > 0 ? (
+            <Pressable onPress={() => router.push('/hinweise')} hitSlop={8} style={({ pressed }) => [s.kopfIcon, s.hinweis, pressed && { opacity: 0.6 }]}>
+              <Text style={s.hinweisText}>💡 {anzahlHinweise}</Text>
+            </Pressable>
+          ) : null}
+          <Pressable onPress={() => router.push('/erledigt')} hitSlop={8} style={({ pressed }) => [s.kopfIcon, s.erledigt, pressed && { opacity: 0.6 }]}>
+            <Text style={s.erledigtText}>✅ {anzahlErledigt}</Text>
+          </Pressable>
+        </View>
+      ),
+    });
+  }, [navigation, anzahlHinweise, anzahlErledigt]);
+
   const kopf = (
     <View style={s.kopf}>
       <View style={s.ampel}>
@@ -133,16 +152,11 @@ export default function Uebersicht() {
           <Text style={[s.knopfText, { color: '#fff' }]}>⏱ Zulagen</Text>
         </Pressable>
         <Pressable onPress={() => router.push('/material')} style={({ pressed }) => [s.knopf, pressed && { opacity: 0.7 }]}>
-          <Text style={s.knopfText}>📦 Material{materialOffen ? ` (${materialOffen})` : ''}</Text>
+          <Text style={s.knopfText}>📦 Material{materialOffen ? ` ${materialOffen}` : ''}</Text>
         </Pressable>
-        <Pressable onPress={() => router.push('/erledigt')} style={({ pressed }) => [s.knopf, s.erledigt, { flex: 0.6 }, pressed && { opacity: 0.7 }]}>
-          <Text style={s.erledigtText}>✅ {anzahlErledigt}</Text>
+        <Pressable onPress={() => router.push('/magazin')} style={({ pressed }) => [s.knopf, pressed && { opacity: 0.7 }]}>
+          <Text style={s.knopfText}>🗄 Magazin</Text>
         </Pressable>
-        {anzahlHinweise > 0 ? (
-          <Pressable onPress={() => router.push('/hinweise')} style={({ pressed }) => [s.knopf, s.hinweis, { flex: 0.6 }, pressed && { opacity: 0.7 }]}>
-            <Text style={s.hinweisText}>💡 {anzahlHinweise}</Text>
-          </Pressable>
-        ) : null}
       </View>
       <TextInput
         value={suche}
@@ -162,7 +176,7 @@ export default function Uebersicht() {
           <Chip key={k.id} aktiv={offeneHaupt?.id === k.id} text={`${k.name}${kategorien.some((x) => x.eltern_id === k.id) ? ' ▾' : ''}`} farbe={k.farbe}
             onPress={() => setFilterKategorie(offeneHaupt?.id === k.id ? null : k.id)} />
         ))}
-        <Pressable onPress={() => router.push('/kategorien')} style={[s.chip, s.chipKategorien]}><Text style={s.chipText}>⚙ Kategorien</Text></Pressable>
+        <Pressable onPress={() => router.push('/kategorien')} style={[s.chip, s.chipKategorien]}><Text style={s.chipText}>⚙ Abteilungen</Text></Pressable>
       </ScrollView>
       {offeneHaupt && unterKategorien.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} keyboardShouldPersistTaps="handled">
@@ -259,6 +273,8 @@ const s = StyleSheet.create({
   chip: { backgroundColor: farben.karte, borderWidth: 2, borderColor: farben.rahmen, borderRadius: 999, paddingHorizontal: 16, minHeight: 48, justifyContent: 'center' },
   chipReihe: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   chipPunkt: { width: 12, height: 12, borderRadius: 6 },
+  kopfIcons: { flexDirection: 'row', gap: 8, marginRight: 12 },
+  kopfIcon: { borderWidth: 2, borderRadius: 12, paddingHorizontal: 10, minHeight: 40, justifyContent: 'center' },
   knopf: { flex: 1, minHeight: groessen.tasteHoeheKlein, borderRadius: groessen.radius, borderWidth: 2, borderColor: farben.rahmen, backgroundColor: farben.karte, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   knopfText: { fontSize: groessen.schriftKlein, fontWeight: '800', color: farben.text, textAlign: 'center' },
   zulagen: { backgroundColor: '#EA580C', borderColor: '#EA580C' },

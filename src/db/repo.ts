@@ -12,7 +12,7 @@ import type { StatZeile, TagesZulage } from '@/lib/statistik';
 import { Hinweis, hinweiseErstellen } from '@/lib/hinweise';
 import { intervallInTagen, type Intervall } from '@/lib/intervall';
 import { LOKALER_BETRIEB_ID } from './schema';
-import type { Durchfuehrung, Eintrag, EintragMitStatus, Ergebnis, Foto, Kategorie, Material } from './typen';
+import type { Durchfuehrung, Eintrag, EintragMitStatus, Ergebnis, Foto, Kategorie, MagazinTeil, Material } from './typen';
 import { geschwister } from '@/lib/kategorien';
 
 const neueId = () => Crypto.randomUUID();
@@ -382,6 +382,51 @@ export async function fotosZuMaterial(db: SQLiteDatabase, materialId: string): P
   return db.getAllAsync<Foto>('SELECT * FROM fotos WHERE material_id = ? AND deleted_at IS NULL ORDER BY created_at', materialId);
 }
 
+// ---------- Magazin (wo liegt was?) ----------
+
+const MAGAZIN_SQL = `
+  SELECT m.*,
+         (SELECT f.datei FROM fotos f WHERE f.magazin_id = m.id AND f.deleted_at IS NULL ORDER BY f.created_at LIMIT 1) AS erstes_foto
+    FROM magazin m WHERE m.betrieb_id = ? AND m.deleted_at IS NULL`;
+
+export async function magazinLaden(db: SQLiteDatabase): Promise<MagazinTeil[]> {
+  return db.getAllAsync<MagazinTeil>(`${MAGAZIN_SQL} ORDER BY m.name COLLATE NOCASE`, betrieb());
+}
+
+export async function magazinEinzeln(db: SQLiteDatabase, id: string): Promise<MagazinTeil | null> {
+  return db.getFirstAsync<MagazinTeil>(`${MAGAZIN_SQL} AND m.id = ?`, betrieb(), id);
+}
+
+export interface MagazinDaten { name: string; regal: string; fach: string; paternoster: string; notiz: string }
+
+export async function magazinSpeichern(db: SQLiteDatabase, id: string | null, d: MagazinDaten): Promise<string> {
+  const t = jetztIso();
+  const w = [d.name.trim(), d.regal.trim(), d.fach.trim(), d.paternoster.trim(), d.notiz.trim()];
+  if (id) {
+    await db.runAsync('UPDATE magazin SET name = ?, regal = ?, fach = ?, paternoster = ?, notiz = ?, updated_at = ? WHERE id = ?', ...w, t, id);
+  } else {
+    id = neueId();
+    await db.runAsync('INSERT INTO magazin (id, betrieb_id, name, regal, fach, paternoster, notiz, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      id, betrieb(), ...w, t, t);
+  }
+  await vorschlagLernen(db, 'magazin', d.name);
+  await vorschlagLernen(db, 'regal', d.regal);
+  await vorschlagLernen(db, 'paternoster', d.paternoster);
+  return id;
+}
+
+export async function magazinLoeschen(db: SQLiteDatabase, id: string): Promise<void> {
+  const t = jetztIso();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('UPDATE fotos SET deleted_at = ? WHERE magazin_id = ? AND deleted_at IS NULL', t, id);
+    await db.runAsync('UPDATE magazin SET deleted_at = ?, updated_at = ? WHERE id = ?', t, t, id);
+  });
+}
+
+export async function fotosZuMagazin(db: SQLiteDatabase, magazinId: string): Promise<Foto[]> {
+  return db.getAllAsync<Foto>('SELECT * FROM fotos WHERE magazin_id = ? AND deleted_at IS NULL ORDER BY created_at', magazinId);
+}
+
 export async function statistikGezeigtLaden(db: SQLiteDatabase): Promise<string | null> {
   const r = await db.getFirstAsync<{ wert: string }>("SELECT wert FROM einstellungen WHERE schluessel = 'statistik_gezeigt'");
   return r?.wert ?? null;
@@ -418,13 +463,13 @@ export async function fotosZuDurchfuehrungen(db: SQLiteDatabase, eintragId: stri
 
 export async function fotoSpeichern(
   db: SQLiteDatabase,
-  ziel: { eintragId?: string; durchfuehrungId?: string; materialId?: string },
+  ziel: { eintragId?: string; durchfuehrungId?: string; materialId?: string; magazinId?: string },
   datei: string,
 ): Promise<string> {
   const id = neueId();
   await db.runAsync(
-    'INSERT INTO fotos (id, betrieb_id, eintrag_id, durchfuehrung_id, material_id, datei, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    id, betrieb(), ziel.eintragId ?? null, ziel.durchfuehrungId ?? null, ziel.materialId ?? null, datei, jetztIso(),
+    'INSERT INTO fotos (id, betrieb_id, eintrag_id, durchfuehrung_id, material_id, magazin_id, datei, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    id, betrieb(), ziel.eintragId ?? null, ziel.durchfuehrungId ?? null, ziel.materialId ?? null, ziel.magazinId ?? null, datei, jetztIso(),
   );
   return id;
 }
@@ -444,6 +489,7 @@ export async function einstellungenLaden(db: SQLiteDatabase): Promise<Erinnerung
     aktiv: (m.get('erinnerung_aktiv') ?? '1') === '1',
     uhrzeit: istGueltigeUhrzeit(uhr) ? uhr : STANDARD_UHRZEIT,
     vorwarnTage: isNaN(tage) ? 7 : tage,
+    morgen: (m.get('morgen_aktiv') ?? '1') === '1',
   };
 }
 
@@ -453,6 +499,7 @@ export async function einstellungenSpeichern(db: SQLiteDatabase, e: ErinnerungsE
     await db.runAsync(sql, 'erinnerung_aktiv', e.aktiv ? '1' : '0');
     await db.runAsync(sql, 'erinnerung_uhrzeit', e.uhrzeit);
     await db.runAsync(sql, 'vorwarnung_tage', String(e.vorwarnTage));
+    await db.runAsync(sql, 'morgen_aktiv', e.morgen === false ? '0' : '1');
   });
 }
 
@@ -472,7 +519,7 @@ export async function prueferSpeichern(db: SQLiteDatabase, name: string): Promis
 // ---------- Lernende Vorschläge ----------
 // Die App merkt sich, was geschrieben/gesucht wird, und schlägt es wieder vor. Alles nur am Handy.
 
-export type VorschlagFeld = 'beschreibung' | 'mangel' | 'aufgabe' | 'pruefer' | 'suche' | 'material';
+export type VorschlagFeld = 'beschreibung' | 'mangel' | 'aufgabe' | 'pruefer' | 'suche' | 'material' | 'magazin' | 'regal' | 'paternoster';
 
 const NICHT_LERNEN = new Set(['', 'durchgeführt', 'übernommen beim anlegen des eintrags']);
 

@@ -1,5 +1,5 @@
 // Berechnet, wann welche Erinnerung kommen soll. Reine Rechnung, ohne Handy-Funktionen (darum testbar).
-import { ausDate, formatDeutsch, formatMitTag, plusTage } from './datum';
+import { ausDate, formatDeutsch, formatMitTag, plusTage, wochentag } from './datum';
 import { berechneFaelligkeit } from './faelligkeit';
 import type { Intervall } from './intervall';
 import { zeitpunkt } from './uhrzeit';
@@ -21,6 +21,8 @@ export interface ErinnerungsEinstellungen {
   aktiv: boolean;
   uhrzeit: string;      // Standard-Uhrzeit "HH:MM"
   vorwarnTage: number;  // 0 = nur am Tag der Fälligkeit
+  /** Morgen-Übersicht Mo–Fr zur Standard-Uhrzeit (ersetzt Einzelmeldungen zur selben Uhrzeit). */
+  morgen?: boolean;
 }
 
 export interface Erinnerung {
@@ -28,7 +30,7 @@ export interface Erinnerung {
   titel: string;
   text: string;
   eintragId: string | null; // null = Sammelmeldung
-  art: 'vorwarnung' | 'faellig' | 'ueberfaellig' | 'schlummer';
+  art: 'vorwarnung' | 'faellig' | 'ueberfaellig' | 'schlummer' | 'morgen';
 }
 
 /** Android erlaubt nur eine begrenzte Zahl geplanter Wecker pro App – wir planen die nächsten N. */
@@ -56,7 +58,11 @@ export function erinnerungsPlan(eintraege: PlanEintrag[], e: ErinnerungsEinstell
     }
 
     const faelligAm = zeitpunkt(f.naechster, uhr);
-    if (erlaubt(faelligAm)) {
+    // Mit Morgen-Übersicht: keine eigene Meldung, wenn sie zur gleichen Uhrzeit käme
+    const imMorgen = !!e.morgen && !x.uhrzeit;
+    if (imMorgen) {
+      // nichts – steht in der Morgen-Übersicht
+    } else if (erlaubt(faelligAm)) {
       liste.push({ wann: faelligAm, titel: `🔧 Heute fällig: ${x.name}`, text: kurz, eintragId: x.id, art: 'faellig' });
     } else if (faelligAm <= jetzt && !schlummert) {
       ueberfaellig.push(x);
@@ -71,8 +77,37 @@ export function erinnerungsPlan(eintraege: PlanEintrag[], e: ErinnerungsEinstell
     }
   }
 
-  // Überfälliges: eine Sammelmeldung zur nächsten Standard-Uhrzeit (heute, sonst morgen).
-  if (ueberfaellig.length > 0) {
+  // Morgen-Übersicht: die nächsten 10 Werktage, je eine Meldung, wenn an dem Tag etwas fällig/überfällig ist
+  if (e.morgen) {
+    const termine = eintraege
+      .filter((x) => !(x.schlummernBis && zeitpunkt(x.schlummernBis, x.uhrzeit || e.uhrzeit) > jetzt))
+      .map((x) => ({ x, n: berechneFaelligkeit({ letzte: x.letzte, intervall: x.intervall, festerTermin: x.festerTermin, einmalig: x.einmalig }, heuteIso).naechster }))
+      .filter((t): t is { x: PlanEintrag; n: string } => !!t.n);
+    let gezaehlt = 0;
+    for (let i = 0; gezaehlt < 10 && i < 20; i++) {
+      const tag = plusTage(heuteIso, i);
+      const wt = wochentag(tag);
+      if (wt === 0 || wt === 6) continue;
+      gezaehlt++;
+      const wann = zeitpunkt(tag, e.uhrzeit);
+      if (wann <= jetzt) continue;
+      const heuteFaellig = termine.filter((t) => t.n === tag);
+      const ueber = termine.filter((t) => t.n < tag);
+      const anzahl = heuteFaellig.length + ueber.length;
+      if (anzahl === 0) continue;
+      const namen = [...ueber, ...heuteFaellig].slice(0, 4).map((t) => t.x.name).join(', ') + (anzahl > 4 ? ' …' : '');
+      liste.push({
+        wann,
+        titel: `☀️ Heute: ${anzahl === 1 ? '1 Arbeit' : `${anzahl} Arbeiten`}${ueber.length ? `, ${ueber.length} überfällig` : ''}`,
+        text: namen,
+        eintragId: null,
+        art: 'morgen',
+      });
+    }
+  }
+
+  // Überfälliges: eine Sammelmeldung zur nächsten Standard-Uhrzeit (heute, sonst morgen) – nicht nötig mit Morgen-Übersicht.
+  if (ueberfaellig.length > 0 && !e.morgen) {
     let wann = zeitpunkt(heuteIso, e.uhrzeit);
     if (wann <= jetzt) wann = zeitpunkt(plusTage(heuteIso, 1), e.uhrzeit);
     const einer = ueberfaellig.length === 1;

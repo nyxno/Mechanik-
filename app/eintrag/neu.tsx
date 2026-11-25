@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { durchfuehrungAnlegen, eintraegeLaden, eintragAnlegen, EintragDaten, eintragIntervall, eintragLaden, einstellungenLaden, fotoSpeichern, kategorienLaden } from '@/db/repo';
+import { durchfuehrungAnlegen, eintraegeLaden, eintragAnlegen, EintragDaten, eintragIntervall, eintragLaden, einstellungenLaden, fotoSpeichern, kategorieAnlegen, kategorienLaden } from '@/db/repo';
 import { heute, heuteOderMontag } from '@/lib/datum';
 import type { VorbildEintrag } from '@/lib/muster';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
@@ -11,8 +10,6 @@ import type { Kategorie } from '@/db/typen';
 import { fotosAusGalerie, fotosMitKamera } from '@/lib/fotos';
 import { Bildschirm } from '@/components/Bildschirm';
 import { EintragFormular } from '@/components/EintragFormular';
-import { Taste } from '@/components/Taste';
-import { groessen } from '@/theme';
 
 export default function NeuerEintrag() {
   const db = useSQLiteContext();
@@ -44,14 +41,6 @@ export default function NeuerEintrag() {
   }, [db, vonId]);
 
   if (!kategorien || !vorlage) return null;
-  if (kategorien.length === 0) {
-    return (
-      <Bildschirm>
-        <Text style={{ fontSize: groessen.schrift, marginBottom: 16 }}>Zuerst brauchst du mindestens eine Kategorie.</Text>
-        <Taste titel="Kategorien anlegen" onPress={() => router.replace('/kategorien')} />
-      </Bildschirm>
-    );
-  }
 
   return (
     <Bildschirm>
@@ -62,6 +51,11 @@ export default function NeuerEintrag() {
         standardUhrzeit={standardUhrzeit}
         vorbilder={vorbilder}
         start={vorlage}
+        onNeueKategorie={async (name, elternId) => {
+          const id = await kategorieAnlegen(db, name, elternId);
+          setKategorien(await kategorienLaden(db));
+          return id;
+        }}
         onFotoKamera={fotosMitKamera}
         onFotoGalerie={fotosAusGalerie}
         onAbbrechen={() => router.back()}

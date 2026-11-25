@@ -1,4 +1,4 @@
-// Kategorien und Unterkategorien anlegen, umbenennen, Farbe wählen, sortieren, löschen.
+// Abteilungen (intern: Kategorien) und Unterkategorien anlegen, umbenennen, Farbe wählen, sortieren, löschen.
 import { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -49,8 +49,8 @@ export default function Kategorien() {
     const unter = liste.filter((x) => x.eltern_id === k.id).length;
     Alert.alert(
       `„${k.name}“ löschen?`,
-      (n > 0 ? `Achtung: ${n} Eintr${n === 1 ? 'ag' : 'äge'} mit allen Durchführungen und Fotos werden ebenfalls gelöscht.` : 'Die Kategorie ist leer.')
-        + (unter > 0 ? `\n\nDie ${unter} Unterkategorie${unter === 1 ? '' : 'n'} bleiben erhalten und werden zu Hauptkategorien.` : ''),
+      (n > 0 ? `Achtung: ${n} Eintr${n === 1 ? 'ag' : 'äge'} mit allen Durchführungen und Fotos werden ebenfalls gelöscht.` : 'Die Abteilung ist leer.')
+        + (unter > 0 ? `\n\nDie ${unter} Unterkategorie${unter === 1 ? '' : 'n'} bleiben erhalten und werden zu eigenen Abteilungen.` : ''),
       [
         { text: 'Abbrechen', style: 'cancel' },
         { text: 'Löschen', style: 'destructive', onPress: async () => { await kategorieLoeschen(db, k.id); setBearbeite(null); laden(); } },
@@ -66,7 +66,7 @@ export default function Kategorien() {
         contentContainerStyle={s.liste}
         ListHeaderComponent={
           <View style={s.neu}>
-            <Eingabe label="Neue Kategorie" value={neu} onChangeText={setNeu} placeholder="z. B. Elektrik" onSubmitEditing={anlegen} returnKeyType="done" />
+            <Eingabe label="Neue Abteilung" value={neu} onChangeText={setNeu} placeholder="z. B. KE, HE, Werkstatt" onSubmitEditing={anlegen} returnKeyType="done" />
             <Taste titel="＋ Hinzufügen" onPress={anlegen} deaktiviert={!neu.trim()} klein />
             <Text style={s.hinweis}>Tippe auf den Namen: umbenennen, Farbe ändern, Unterkategorie anlegen oder löschen. Mit ▲ ▼ änderst du die Reihenfolge.</Text>
           </View>
@@ -99,9 +99,9 @@ export default function Kategorien() {
                   </View>
                 </>
               ) : (
-                <Text style={s.hinweis}>Unterkategorie – Farbe wie die Hauptkategorie.</Text>
+                <Text style={s.hinweis}>Unterkategorie – Farbe wie die Abteilung.</Text>
               )}
-              <Taste titel="🗑 Kategorie löschen" onPress={() => loeschen(item)} art="gefahr" klein style={{ marginTop: 10 }} />
+              <Taste titel="🗑 Löschen" onPress={() => loeschen(item)} art="gefahr" klein style={{ marginTop: 10 }} />
             </View>
           ) : (
             <View style={[s.karte, s.zeile, einruecken]}>
@@ -116,7 +116,7 @@ export default function Kategorien() {
             </View>
           );
         }}
-        ListEmptyComponent={<Text style={s.hinweis}>Noch keine Kategorien.</Text>}
+        ListEmptyComponent={<Text style={s.hinweis}>Noch keine Abteilungen.</Text>}
       />
     </View>
   );

@@ -112,13 +112,15 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Übersicht' }} />
-          <Stack.Screen name="kategorien" options={{ title: 'Kategorien' }} />
+          <Stack.Screen name="kategorien" options={{ title: 'Abteilungen' }} />
           <Stack.Screen name="erledigt" options={{ title: 'Erledigt' }} />
           <Stack.Screen name="hinweise" options={{ title: 'Erkannte Muster' }} />
           <Stack.Screen name="statistik" options={{ title: 'Monatsstatistik' }} />
           <Stack.Screen name="zulagen" options={{ title: 'Zulagen eintragen' }} />
           <Stack.Screen name="material/index" options={{ title: 'Materialliste' }} />
           <Stack.Screen name="material/[id]" options={{ title: 'Material' }} />
+          <Stack.Screen name="magazin/index" options={{ title: '🗄 Magazin' }} />
+          <Stack.Screen name="magazin/[id]" options={{ title: 'Magazin' }} />
           <Stack.Screen name="eintrag/neu" options={{ title: 'Neuer Eintrag' }} />
           <Stack.Screen name="eintrag/[id]/index" options={{ title: 'Eintrag' }} />
           <Stack.Screen name="eintrag/[id]/bearbeiten" options={{ title: 'Eintrag bearbeiten' }} />

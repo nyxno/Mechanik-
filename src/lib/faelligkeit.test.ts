@@ -143,3 +143,19 @@ test('Erinnerungsplan: Schlummern verschiebt nur die Erinnerung', () => {
   ], einst, jetzt);
   assert.equal(alt[0].art, 'ueberfaellig');
 });
+
+test('Morgen-Übersicht: Mo–Fr, ersetzt Einzelmeldungen zur Standard-Uhrzeit', () => {
+  const jetzt = new Date(2026, 10, 25, 22, 0); // Mi 25.11.2026 22:00
+  const plan = erinnerungsPlan([
+    { ...basis, id: 'a', name: 'Pumpe 1', festerTermin: '2026-11-26' },            // Do
+    { ...basis, id: 'b', name: 'Kühlturm', festerTermin: '2026-11-20' },           // überfällig
+    { ...basis, id: 'c', name: 'Eigene Zeit', festerTermin: '2026-11-27', uhrzeit: '13:00' }, // Fr, eigene Uhrzeit
+  ], { ...einst, vorwarnTage: 0, morgen: true }, jetzt);
+  const morgen = plan.filter((p) => p.art === 'morgen');
+  assert.equal(morgen[0].wann.getDate(), 26);
+  assert.equal(morgen[0].titel, '☀️ Heute: 2 Arbeiten, 1 überfällig');
+  assert.ok(!morgen.some((m) => [28, 29].includes(m.wann.getDate()))); // kein Sa/So
+  assert.ok(!plan.some((p) => p.art === 'faellig' && p.eintragId === 'a')); // keine doppelte Einzelmeldung
+  assert.ok(plan.some((p) => p.art === 'faellig' && p.eintragId === 'c'));  // eigene Uhrzeit bleibt
+  assert.ok(!plan.some((p) => p.art === 'ueberfaellig'));
+});

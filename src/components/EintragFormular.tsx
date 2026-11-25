@@ -37,12 +37,14 @@ interface Props {
   vorhandeneFotos?: string[];
   onFotoLoeschen?: (datei: string) => void;
   onFotoKamera: () => Promise<string[]>;
+  /** Neue Abteilung (elternId null) oder Unterkategorie anlegen; gibt die neue Id zurück. */
+  onNeueKategorie?: (name: string, elternId: string | null) => Promise<string>;
   onFotoGalerie: () => Promise<string[]>;
   onSpeichern: (e: FormularErgebnis) => Promise<void>;
   onAbbrechen: () => void;
 }
 
-export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehrung = null, start, neu, vorbilder = [], vorhandeneFotos = [], onFotoLoeschen, onFotoKamera, onFotoGalerie, onSpeichern, onAbbrechen }: Props) {
+export function EintragFormular({ onNeueKategorie, kategorien, standardUhrzeit, letzteDurchfuehrung = null, start, neu, vorbilder = [], vorhandeneFotos = [], onFotoLoeschen, onFotoKamera, onFotoGalerie, onSpeichern, onAbbrechen }: Props) {
   const [kategorieId, setKategorieId] = useState(start?.kategorie_id ?? kategorien[0]?.id ?? '');
   const [name, setName] = useState(start?.name ?? '');
   const [aufgabe, setAufgabe] = useState(start?.aufgabe ?? '');
@@ -56,6 +58,8 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
   const [terminVonHand, setTerminVonHand] = useState(!neu || !!start?.naechster_termin);
   const [neueFotos, setNeueFotos] = useState<string[]>([]);
   const [laeuft, setLaeuft] = useState(false);
+  const [neueAbt, setNeueAbt] = useState<string | null>(null);
+  const [neueUnter, setNeueUnter] = useState<string | null>(null);
   // Automatische Zuordnung: nur beim Anlegen und solange das Gebiet nicht von Hand gewählt wurde
   const [kategorieVonHand, setKategorieVonHand] = useState(!neu || !!start?.kategorie_id);
   const [vorschlagUebernommen, setVorschlagUebernommen] = useState(false);
@@ -100,7 +104,7 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
 
   const speichern = async () => {
     if (!name.trim()) return Alert.alert('Name fehlt', 'Bitte gib dem Eintrag einen Namen, z. B. „Therme Halle 2“.');
-    if (!kategorieId) return Alert.alert('Kategorie fehlt', 'Bitte wähle eine Kategorie.');
+    if (!kategorieId) return Alert.alert('Abteilung fehlt', 'Bitte wähle eine Abteilung oder lege mit „＋ Neue Abteilung“ eine an.');
     if (!einmalig && !istGueltigesIntervall(intervall)) return Alert.alert('Intervall ungültig', 'Bitte gib eine Zahl ab 1 ein.');
     if (einmalig && !naechster) return Alert.alert('Datum fehlt', 'Bei „Einmalig“ bitte eingeben, wann es fällig ist.');
     setLaeuft(true);
@@ -125,21 +129,52 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
 
   return (
     <View>
-      <Text style={s.label}>Kategorie</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} style={{ marginBottom: unter.length ? 8 : groessen.abstand }}>
+      <Text style={s.label}>1. Abteilung</Text>
+      <View style={s.chipsWrap}>
         {haupt.map((k) => (
-          <KatChip key={k.id} k={k} aktiv={k.id === hauptId} text={`${k.name}${kategorien.some((x) => x.eltern_id === k.id) ? ' ▾' : ''}`}
-            onPress={() => { setKategorieId(k.id); setKategorieVonHand(true); }} />
+          <KatChip key={k.id} k={k} aktiv={k.id === hauptId} text={k.name}
+            onPress={() => { setKategorieId(k.id); setKategorieVonHand(true); setNeueUnter(null); }} />
         ))}
-      </ScrollView>
-      {unter.length ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips} style={{ marginBottom: groessen.abstand }}>
-          {unter.map((k) => (
-            <KatChip key={k.id} k={k} aktiv={k.id === kategorieId} text={`↳ ${k.name}`}
-              onPress={() => { setKategorieId(k.id === kategorieId ? hauptId! : k.id); setKategorieVonHand(true); }} />
-          ))}
-        </ScrollView>
+        {onNeueKategorie ? (
+          <Pressable onPress={() => setNeueAbt(neueAbt === null ? '' : null)} style={[s.chip, s.chipNeu]}>
+            <Text style={s.chipText}>＋ Neue Abteilung</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      {neueAbt !== null ? (
+        <NeuZeile wert={neueAbt} setWert={setNeueAbt} platzhalter="z. B. KE, HE" onAnlegen={async () => {
+          const id = await onNeueKategorie!(neueAbt, null);
+          setKategorieId(id); setKategorieVonHand(true); setNeueAbt(null);
+        }} />
       ) : null}
+
+      {hauptId ? (
+        <>
+          <Text style={s.label}>2. Unterkategorie (optional)</Text>
+          <View style={s.chipsWrap}>
+            <Pressable onPress={() => { setKategorieId(hauptId); setKategorieVonHand(true); }}
+              style={[s.chip, kategorieId === hauptId && s.chipAktivGrau]}>
+              <Text style={[s.chipText, kategorieId === hauptId && { color: '#fff' }]}>Ohne</Text>
+            </Pressable>
+            {unter.map((k) => (
+              <KatChip key={k.id} k={k} aktiv={k.id === kategorieId} text={k.name}
+                onPress={() => { setKategorieId(k.id); setKategorieVonHand(true); }} />
+            ))}
+            {onNeueKategorie ? (
+              <Pressable onPress={() => setNeueUnter(neueUnter === null ? '' : null)} style={[s.chip, s.chipNeu]}>
+                <Text style={s.chipText}>＋ Neue Unterkategorie</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {neueUnter !== null ? (
+            <NeuZeile wert={neueUnter} setWert={setNeueUnter} platzhalter="z. B. Kühlturm, Pumpe" onAnlegen={async () => {
+              const id = await onNeueKategorie!(neueUnter, hauptId);
+              setKategorieId(id); setKategorieVonHand(true); setNeueUnter(null);
+            }} />
+          ) : null}
+        </>
+      ) : null}
+      <View style={{ height: 8 }} />
 
       <Eingabe label="Name" value={name} onChangeText={setName} placeholder="z. B. Therme Halle 2" />
       {vorschlag && vorschlagKategorie ? (
@@ -149,7 +184,7 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
             {vorschlag.vorbild ? ` (wie „${vorschlag.vorbild}“)` : ''}
           </Text>
           {kategorieVonHand && kategorieId !== vorschlag.kategorie_id ? (
-            <Taste titel={`Gebiet ${vorschlagKategorie.name} wählen`} onPress={() => setKategorieId(vorschlag.kategorie_id)} art="sekundaer" klein />
+            <Taste titel={`${vorschlagKategorie.name} wählen`} onPress={() => setKategorieId(vorschlag.kategorie_id)} art="sekundaer" klein />
           ) : null}
           {mehrUebernehmbar ? (
             <Taste
@@ -218,6 +253,10 @@ export function EintragFormular({ kategorien, standardUhrzeit, letzteDurchfuehru
 }
 
 const s = StyleSheet.create({
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  chipNeu: { borderStyle: 'dashed', borderColor: farben.primaer },
+  chipAktivGrau: { backgroundColor: farben.grau, borderColor: farben.grau },
+  neuZeile: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   vorschlag: { backgroundColor: '#EFF6FF', borderWidth: 2, borderColor: '#BFDBFE', borderRadius: groessen.radius, padding: 12, gap: 8, marginTop: -6, marginBottom: groessen.abstand },
   vorschlagText: { fontSize: groessen.schrift, color: farben.text },
   label: { fontSize: groessen.schrift, fontWeight: '600', color: farben.text, marginBottom: 6 },
@@ -241,5 +280,17 @@ function KatChip({ k, aktiv, text, onPress }: { k: Kategorie; aktiv: boolean; te
       style={[s.chip, k.farbe ? { borderColor: k.farbe } : null, aktiv && { backgroundColor: k.farbe ?? farben.primaer, borderColor: k.farbe ?? farben.primaer }]}>
       <Text style={[s.chipText, aktiv && { color: textFarbe(k.farbe ?? farben.primaer) }]}>{text}</Text>
     </Pressable>
+  );
+}
+
+/** Eingabezeile zum schnellen Anlegen einer Abteilung / Unterkategorie. */
+function NeuZeile({ wert, setWert, platzhalter, onAnlegen }: { wert: string; setWert: (t: string) => void; platzhalter: string; onAnlegen: () => Promise<void> }) {
+  return (
+    <View style={s.neuZeile}>
+      <View style={{ flex: 1 }}>
+        <Eingabe label="Name" value={wert} onChangeText={setWert} placeholder={platzhalter} autoFocus onSubmitEditing={() => { if (wert.trim()) onAnlegen(); }} returnKeyType="done" />
+      </View>
+      <Taste titel="＋" onPress={() => { if (wert.trim()) onAnlegen(); }} deaktiviert={!wert.trim()} style={{ width: 64, marginTop: 30 }} />
+    </View>
   );
 }
