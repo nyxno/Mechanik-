@@ -2,7 +2,7 @@
 
 Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 
-**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in Version 0.7, 26–29 in Version 0.8 umgesetzt (✅). Punkt 30 ist offen (Fehler).
+**Stand:** Punkte 1–9 in Version 0.3, 10–13 in Version 0.4, 14–19 in Version 0.5, 20–22 in Version 0.6, 23–25 in Version 0.7, 26–29 in Version 0.8 umgesetzt (✅). Punkte 30–34 sind offen.
 
 ## ✅ 1. Reihenfolge der Kategorien ändern
 - Die Kategorien (Heizung, Druckbehälter, Brandschutz …) sollen sich verschieben lassen,
@@ -199,4 +199,27 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Lösung: Raster fest in 7 Spalten je Woche aufbauen (eine Zeile pro Woche, Zellen mit flex: 1).
 - Tagesansicht prüfen und robuster machen; App-Version in den Einstellungen anzeigen,
   damit klar ist, welche Version installiert ist.
+
+## 31. Update-Hinweis / App-Version
+- App-Version in den Einstellungen anzeigen.
+- Das Projekt auf GitHub ist privat → die App kann dort nicht selbst nach Updates schauen.
+  Der Nutzer legt die APKs in Google Drive ab.
+- Lösung: In den Einstellungen einmal den **Link zum Drive-Ordner** mit den Updates eintragen;
+  Taste **„🆕 Nach Update schauen“** öffnet diesen Ordner direkt. Version wird daneben angezeigt.
+
+## 32. Morgen-Übersicht
+- Jeden Arbeitstag (Mo–Fr) zur Standard-Uhrzeit eine Benachrichtigung:
+  „Heute: 3 Arbeiten, 1 überfällig“ (antippen → App öffnet die Startseite).
+- Ein-/ausschaltbar in den Einstellungen.
+
+## 33. Abteilungen (z. B. KE, HE) + bessere Unterkategorien
+- Abteilungen wie **KE** und **HE** als eigenes Merkmal (zusätzlich zur Kategorie), selbst anlegbar.
+- Jeder Eintrag bekommt eine Abteilung; auf der Startseite nach Abteilung filtern; Statistik nach Abteilung.
+- Unterkategorien gibt es seit Version 0.7 (z. B. Heizung → Enthärtetes Wasser).
+- Annahme (falls keine andere Antwort): Abteilung als eigenes Feld, Kategorien/Unterkategorien bleiben für die Art der Arbeit.
+
+## 34. Magazin
+- Neue Taste **„🗄 Magazin“**: Lagerorte von Dingen nachschlagen.
+- Je Eintrag: **Name** (z. B. Loctite 243), **Regal**, **Fach**, **Paternoster** (Nr./Ebene), Notiz, Fotos.
+- Schnelle Suche („Wo ist …?“), lernende Vorschläge.
 
