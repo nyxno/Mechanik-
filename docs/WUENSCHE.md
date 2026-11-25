@@ -200,12 +200,9 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
 - Tagesansicht prüfen und robuster machen; App-Version in den Einstellungen anzeigen,
   damit klar ist, welche Version installiert ist.
 
-## 31. Update-Hinweis / App-Version
-- App-Version in den Einstellungen anzeigen.
-- Das Projekt auf GitHub ist privat → die App kann dort nicht selbst nach Updates schauen.
-  Der Nutzer legt die APKs in Google Drive ab.
-- Lösung: In den Einstellungen einmal den **Link zum Drive-Ordner** mit den Updates eintragen;
-  Taste **„🆕 Nach Update schauen“** öffnet diesen Ordner direkt. Version wird daneben angezeigt.
+## 31. App-Version anzeigen
+- App-Version in den Einstellungen anzeigen (damit klar ist, was installiert ist).
+- **Entschieden:** keine Update-Taste, kein Drive-Link.
 
 ## 32. Morgen-Übersicht
 - Jeden Arbeitstag (Mo–Fr) zur Standard-Uhrzeit eine Benachrichtigung:
