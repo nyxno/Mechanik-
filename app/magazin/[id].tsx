@@ -101,7 +101,7 @@ export default function MagazinBearbeiten() {
         <View style={{ flex: 1 }}><Eingabe label="Fach" value={fach} onChangeText={setFach} placeholder="z. B. B2" /></View>
       </View>
       <VorschlagEingabe feld="paternoster" label="Paternoster" value={paternoster} onChangeText={setPaternoster} placeholder="z. B. 2 / Ebene 14" />
-      <Eingabe label="Notiz (optional)" value={notiz} onChangeText={setNotiz} placeholder="Menge, Größe, Artikelnummer …" mehrzeilig />
+      <Eingabe label="Notiz (optional)" value={notiz} onChangeText={setNotiz} placeholder="Menge, Größe, Lieferant …" mehrzeilig />
       <FotoLeiste
         titel="Fotos (z. B. vom Fach)"
         dateien={[...fotos.map((f) => f.datei), ...neueFotos]}
