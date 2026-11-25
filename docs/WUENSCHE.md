@@ -209,11 +209,14 @@ Gesammelte Änderungswünsche. Erst programmieren, wenn der Nutzer das Go gibt.
   „Heute: 3 Arbeiten, 1 überfällig“ (antippen → App öffnet die Startseite).
 - Ein-/ausschaltbar in den Einstellungen.
 
-## 33. Abteilungen (z. B. KE, HE) + bessere Unterkategorien
-- Abteilungen wie **KE** und **HE** als eigenes Merkmal (zusätzlich zur Kategorie), selbst anlegbar.
-- Jeder Eintrag bekommt eine Abteilung; auf der Startseite nach Abteilung filtern; Statistik nach Abteilung.
-- Unterkategorien gibt es seit Version 0.7 (z. B. Heizung → Enthärtetes Wasser).
-- Annahme (falls keine andere Antwort): Abteilung als eigenes Feld, Kategorien/Unterkategorien bleiben für die Art der Arbeit.
+## 33. Abteilungen + Unterkategorien direkt beim neuen Eintrag
+- **Entschieden (Nutzer):** Ablauf beim neuen Eintrag:
+  **Abteilung wählen** (z. B. KE, HE) → **wenn gewünscht Unterkategorie** (z. B. Kühlturm, Pumpe) → hinzufügen.
+- Die bisherigen „Kategorien“ heißen in der App ab jetzt **Abteilungen**, ihre Unterkategorien bleiben Unterkategorien.
+- Direkt im Formular: „＋ Neue Abteilung“ und „＋ Neue Unterkategorie“ anlegen, ohne Umweg über die Einstellungen.
+- Unterkategorie ist freiwillig („ohne Unterkategorie“ möglich).
+- Startseite: Filter nach Abteilung (mit Unterkategorien darunter) wie bisher.
+- Kein zusätzliches, getrenntes Abteilungs-Feld.
 
 ## 34. Magazin
 - Neue Taste **„🗄 Magazin“**: Lagerorte von Dingen nachschlagen.
