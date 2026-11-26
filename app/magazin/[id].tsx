@@ -12,6 +12,7 @@ import { FotoAnsicht } from '@/components/FotoAnsicht';
 import { FotoLeiste } from '@/components/FotoLeiste';
 import { Taste } from '@/components/Taste';
 import { VorschlagEingabe } from '@/components/Vorschlaege';
+import { useUngespeicherteFotos } from '@/components/useUngespeicherteFotos';
 import { farben, groessen, sz } from '@/theme';
 import { artikelnummerVorschlag, bezeichnungVorschlag } from '@/lib/etikett';
 import { etikettFotografieren, etikettLesenMoeglich } from '@/lib/etikettLesen';
@@ -32,6 +33,7 @@ export default function MagazinBearbeiten() {
   const [notiz, setNotiz] = useState('');
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [neueFotos, setNeueFotos] = useState<string[]>([]);
+  const fotosGespeichert = useUngespeicherteFotos(neueFotos);
   const [ansicht, setAnsicht] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function MagazinBearbeiten() {
     if (!name.trim()) return Alert.alert('Name fehlt', 'Was liegt dort? Z. B. „Loctite 243“.');
     const mid = await magazinSpeichern(db, neu ? null : id, { name, artikelnummer, eigener_name: eigenerName, regal, fach, paternoster, notiz });
     for (const f of neueFotos) await fotoSpeichern(db, { magazinId: mid }, f);
+    fotosGespeichert();
     zurueck();
   };
   const hinzu = async (fn: () => Promise<string[]>) => { const d = await fn(); if (d.length) setNeueFotos((f) => [...f, ...d]); };
@@ -109,7 +112,7 @@ export default function MagazinBearbeiten() {
         onGalerie={() => hinzu(fotosAusGalerie)}
         onAnsehen={setAnsicht}
         onLoeschen={async (d) => {
-          if (neueFotos.includes(d)) { setNeueFotos((l) => l.filter((x) => x !== d)); return; }
+          if (neueFotos.includes(d)) { fotoDateiLoeschen(d); setNeueFotos((l) => l.filter((x) => x !== d)); return; }
           const f = fotos.find((x) => x.datei === d);
           if (f) { await fotoLoeschen(db, f.id); fotoDateiLoeschen(d); setFotos((l) => l.filter((x) => x.id !== f.id)); }
         }}

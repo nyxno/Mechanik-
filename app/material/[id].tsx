@@ -12,6 +12,7 @@ import { FotoAnsicht } from '@/components/FotoAnsicht';
 import { FotoLeiste } from '@/components/FotoLeiste';
 import { Taste } from '@/components/Taste';
 import { VorschlagEingabe } from '@/components/Vorschlaege';
+import { useUngespeicherteFotos } from '@/components/useUngespeicherteFotos';
 import { farben, groessen, sz } from '@/theme';
 
 const EINHEITEN = ['Stk', 'm', 'kg', 'l', 'Pkg', 'Rolle', 'Satz'];
@@ -28,6 +29,7 @@ export default function MaterialBearbeiten() {
   const [geraet, setGeraet] = useState<string | null>(eintragId ?? null);
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [neueFotos, setNeueFotos] = useState<string[]>([]);
+  const fotosGespeichert = useUngespeicherteFotos(neueFotos);
   const [eintraege, setEintraege] = useState<EintragMitStatus[]>([]);
   const [geraetSuche, setGeraetSuche] = useState<string | null>(null);
   const [ansicht, setAnsicht] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export default function MaterialBearbeiten() {
     if (!name.trim()) return Alert.alert('Name fehlt', 'Bitte eingeben, welches Material, z. B. „Dichtung 1/2 Zoll“.');
     const mid = await materialSpeichern(db, neu ? null : id, { name, menge, einheit, notiz, eintrag_id: geraet });
     for (const f of neueFotos) await fotoSpeichern(db, { materialId: mid }, f);
+    fotosGespeichert();
     if (router.canGoBack()) router.back(); else router.replace('/material');
   };
 
@@ -113,7 +116,7 @@ export default function MaterialBearbeiten() {
         onGalerie={() => fotoHinzu(fotosAusGalerie)}
         onAnsehen={setAnsicht}
         onLoeschen={async (d) => {
-          if (neueFotos.includes(d)) { setNeueFotos((l) => l.filter((x) => x !== d)); return; }
+          if (neueFotos.includes(d)) { fotoDateiLoeschen(d); setNeueFotos((l) => l.filter((x) => x !== d)); return; }
           const f = fotos.find((x) => x.datei === d);
           if (f) { await fotoLoeschen(db, f.id); fotoDateiLoeschen(d); setFotos((l) => l.filter((x) => x.id !== f.id)); }
         }}

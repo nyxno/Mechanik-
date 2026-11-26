@@ -8,12 +8,13 @@ import type { EintragMitStatus, Ergebnis } from '@/db/typen';
 import { aufWerktag, formatDeutsch, heute, plusTage } from '@/lib/datum';
 import { intervallAddieren, intervallText } from '@/lib/intervall';
 import { erinnerungenNeuPlanen } from '@/lib/erinnerungen';
-import { fotosAusGalerie, fotosMitKamera } from '@/lib/fotos';
+import { fotoDateiLoeschen, fotosAusGalerie, fotosMitKamera } from '@/lib/fotos';
 import { Bildschirm } from '@/components/Bildschirm';
 import { DatumFeld } from '@/components/DatumFeld';
 import { wochenendHinweis } from '@/components/EintragFormular';
 import { FotoLeiste } from '@/components/FotoLeiste';
 import { Taste } from '@/components/Taste';
+import { useUngespeicherteFotos } from '@/components/useUngespeicherteFotos';
 import { VorschlagEingabe } from '@/components/Vorschlaege';
 import { StundenWahl } from '@/components/StundenWahl';
 import { ergebnisFarben, farben, groessen, sz } from '@/theme';
@@ -31,6 +32,7 @@ export default function DurchfuehrungErfassen() {
   const [pruefer, setPruefer] = useState('');
   const [prueferGespeichert, setPrueferGespeichert] = useState('');
   const [fotos, setFotos] = useState<string[]>([]);
+  const fotosGespeichert = useUngespeicherteFotos(fotos);
   const [hitze, setHitze] = useState(0);
   const [staub, setStaub] = useState(0);
   /** Vom Benutzer gewählter nächster Termin; null = automatisch (Datum + Intervall). */
@@ -66,6 +68,7 @@ export default function DurchfuehrungErfassen() {
         staub,
       });
       for (const f of fotos) await fotoSpeichern(db, { durchfuehrungId: r.durchfuehrungId }, f);
+      fotosGespeichert();
       // Namen merken, wenn noch keiner eingestellt ist
       if (pruefer.trim() && !prueferGespeichert) await prueferSpeichern(db, pruefer);
       erinnerungenNeuPlanen(db);
@@ -134,7 +137,7 @@ export default function DurchfuehrungErfassen() {
 
       <VorschlagEingabe feld="pruefer" label="Geprüft von" value={pruefer} onChangeText={setPruefer} placeholder="Name des Prüfers" />
 
-      <FotoLeiste titel="Fotos" dateien={fotos} onKamera={() => hinzu(fotosMitKamera)} onGalerie={() => hinzu(fotosAusGalerie)} onLoeschen={(d) => setFotos((f) => f.filter((x) => x !== d))} />
+      <FotoLeiste titel="Fotos" dateien={fotos} onKamera={() => hinzu(fotosMitKamera)} onGalerie={() => hinzu(fotosAusGalerie)} onLoeschen={(d) => { fotoDateiLoeschen(d); setFotos((f) => f.filter((x) => x !== d)); }} />
 
       {einmalig ? (
         <View style={s.info}>

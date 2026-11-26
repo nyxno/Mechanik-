@@ -10,7 +10,7 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 „Übernahme in die nächste Runde“ und wird dort zuerst erledigt.
 
 ## Übernahme in die nächste Runde
-- (nichts offen)
+- Am Handy prüfen: Verdeckt die Tastatur Eingabefelder weit unten (z. B. Notiz im Magazin)? Im Browser nicht prüfbar.
 
 ## Runde 1 – 22.11.2026, 22:22 (Version 0.9)
 
@@ -126,4 +126,12 @@ Abläufe durchgespielt: neuen Eintrag mit automatischer Zuordnung anlegen, Mater
 - **Falsche Abteilung:** Beim neuen Eintrag war die erste Abteilung vorausgewählt – wer nicht tippt,
   landete in „Heizung“. → Nichts vorausgewählt (außer automatische Zuordnung über den Namen oder
   Filter auf der Startseite); ohne Abteilung kommt ein Hinweis.
+
+## Fehlersuche-Runde 4 (letztes Update) – 26.11.2026, 2:30 (Version 0.19)
+
+**Gefunden & behoben**
+- **Speicher füllte sich mit verwaisten Fotos:** Wurde in einem Formular fotografiert und dann
+  abgebrochen (oder mit der Zurück-Taste verlassen), blieben die Fotodateien für immer auf dem Handy.
+  Gleiches beim Entfernen eines noch nicht gespeicherten Fotos mit ✕. → Werden jetzt gelöscht
+  (Neuer Eintrag, Bearbeiten, Durchführung, Material, Magazin). Gespeicherte Fotos bleiben sicher erhalten.
 

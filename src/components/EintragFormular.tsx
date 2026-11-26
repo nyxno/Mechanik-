@@ -10,6 +10,8 @@ import { Eingabe } from './Eingabe';
 import { DatumFeld, UhrzeitFeld } from './DatumFeld';
 import { IntervallWahl } from './IntervallWahl';
 import { VorschlagEingabe } from './Vorschlaege';
+import { useUngespeicherteFotos } from './useUngespeicherteFotos';
+import { fotoDateiLoeschen } from '@/lib/fotos';
 import { intervallText } from '@/lib/intervall';
 import { VorbildEintrag, zuordnungVorschlag } from '@/lib/muster';
 import { Taste } from './Taste';
@@ -58,6 +60,7 @@ export function EintragFormular({ onNeueKategorie, kategorien, standardUhrzeit, 
   // Beim Anlegen mit Intervall: erster Termin steht immer da (änderbar). Von Hand gewählt -> nicht mehr automatisch anpassen.
   const [terminVonHand, setTerminVonHand] = useState(!neu || !!start?.naechster_termin);
   const [neueFotos, setNeueFotos] = useState<string[]>([]);
+  const fotosGespeichert = useUngespeicherteFotos(neueFotos);
   const [laeuft, setLaeuft] = useState(false);
   const [neueAbt, setNeueAbt] = useState<string | null>(null);
   const [neueUnter, setNeueUnter] = useState<string | null>(null);
@@ -109,6 +112,8 @@ export function EintragFormular({ onNeueKategorie, kategorien, standardUhrzeit, 
     if (!einmalig && !istGueltigesIntervall(intervall)) return Alert.alert('Intervall ungültig', 'Bitte gib eine Zahl ab 1 ein.');
     if (einmalig && !naechster) return Alert.alert('Datum fehlt', 'Bei „Einmalig“ bitte eingeben, wann es fällig ist.');
     setLaeuft(true);
+    // Vor dem Speichern als "behalten" markieren: nach dem Speichern wechselt die Seite sofort
+    fotosGespeichert();
     try {
       await onSpeichern({
         daten: {
@@ -242,7 +247,7 @@ export function EintragFormular({ onNeueKategorie, kategorien, standardUhrzeit, 
         onKamera={() => fotosHinzu(onFotoKamera)}
         onGalerie={() => fotosHinzu(onFotoGalerie)}
         onLoeschen={(d) => {
-          if (neueFotos.includes(d)) setNeueFotos((f) => f.filter((x) => x !== d));
+          if (neueFotos.includes(d)) { fotoDateiLoeschen(d); setNeueFotos((f) => f.filter((x) => x !== d)); }
           else onFotoLoeschen?.(d);
         }}
       />
