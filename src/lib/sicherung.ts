@@ -5,7 +5,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { heute } from './datum';
-import { elternZuerst, Sicherung, TABELLEN } from './sicherungFormat';
+import { elternZuerst, Sicherung, TABELLEN, tabellenZumErsetzen } from './sicherungFormat';
 export * from './sicherungFormat';
 
 export async function sicherungErstellen(db: SQLiteDatabase, mitFotos = false): Promise<{ datei: string; anzahl: number; fotos: number }> {
@@ -55,8 +55,9 @@ export async function sicherungAuswaehlen(): Promise<unknown | null> {
 export async function sicherungEinspielen(db: SQLiteDatabase, s: Sicherung): Promise<number> {
   let anzahl = 0;
   await db.withExclusiveTransactionAsync(async (tx) => {
-    for (const t of [...TABELLEN].reverse()) await tx.runAsync(`DELETE FROM ${t}`);
-    for (const t of TABELLEN) {
+    const ersetzen = tabellenZumErsetzen(s);
+    for (const t of [...ersetzen].reverse()) await tx.runAsync(`DELETE FROM ${t}`);
+    for (const t of ersetzen) {
       const spalten = new Set((await tx.getAllAsync<{ name: string }>(`PRAGMA table_info(${t})`)).map((c) => c.name));
       const zeilen = t === 'kategorien' ? elternZuerst(s.tabellen[t] ?? []) : (s.tabellen[t] ?? []);
       for (const z of zeilen) {

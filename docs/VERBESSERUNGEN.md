@@ -10,7 +10,7 @@ Testdaten (Datenbank nur im Speicher). Am Handy ändert sich dadurch nichts.
 „Übernahme in die nächste Runde“ und wird dort zuerst erledigt.
 
 ## Übernahme in die nächste Runde
-- Weitere Code-Durchsicht: Erinnerungen/Benachrichtigungen, Sicherung einspielen.
+- (nichts offen)
 
 ## Runde 1 – 22.11.2026, 22:22 (Version 0.9)
 
@@ -112,4 +112,18 @@ Abläufe durchgespielt: neuen Eintrag mit automatischer Zuordnung anlegen, Mater
 - **Mängel blieben „behoben“ nach Löschen:** Wird eine „In Ordnung“-Prüfung gelöscht, sind die Mängel,
   die sie automatisch als behoben markiert hatte, jetzt wieder offen.
 - Layout geprüft: keine weitere Stelle mit dem Kalender-Problem (Prozent-Breiten im Umbruch).
+
+## Fehlersuche-Runde 3 – 26.11.2026, 1:30 (Version 0.18)
+
+**Aus Runde 2 übernommen – geprüft & behoben**
+- **Datenverlust-Risiko beim Einspielen:** Eine Sicherung aus einer älteren Version (z. B. noch ohne
+  Magazin) hätte das aktuelle Magazin geleert. → Es werden nur Bereiche ersetzt, die in der Sicherung
+  enthalten sind.
+- **Erinnerungen:** Schlug das Einplanen einer einzelnen Meldung fehl, fielen alle folgenden weg.
+  → Jede Meldung wird einzeln abgesichert.
+
+**Gefunden & behoben**
+- **Falsche Abteilung:** Beim neuen Eintrag war die erste Abteilung vorausgewählt – wer nicht tippt,
+  landete in „Heizung“. → Nichts vorausgewählt (außer automatische Zuordnung über den Namen oder
+  Filter auf der Startseite); ohne Abteilung kommt ein Hinweis.
 

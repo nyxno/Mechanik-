@@ -45,7 +45,8 @@ interface Props {
 }
 
 export function EintragFormular({ onNeueKategorie, kategorien, standardUhrzeit, letzteDurchfuehrung = null, start, neu, vorbilder = [], vorhandeneFotos = [], onFotoLoeschen, onFotoKamera, onFotoGalerie, onSpeichern, onAbbrechen }: Props) {
-  const [kategorieId, setKategorieId] = useState(start?.kategorie_id ?? kategorien[0]?.id ?? '');
+  // Beim neuen Eintrag nichts vorauswählen (sonst landet man leicht in der falschen Abteilung)
+  const [kategorieId, setKategorieId] = useState(start?.kategorie_id ?? (neu ? '' : kategorien[0]?.id ?? ''));
   const [name, setName] = useState(start?.name ?? '');
   const [aufgabe, setAufgabe] = useState(start?.aufgabe ?? '');
   const [intervall, setIntervall] = useState<Intervall>(start?.intervall ?? { wert: 1, einheit: 'jahre' });

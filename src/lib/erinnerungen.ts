@@ -103,6 +103,7 @@ async function planen(db: SQLiteDatabase): Promise<number> {
   if (!recht.granted) return 0;
   const plan = erinnerungsPlan(zuPlanEintraegen(eintraege), einstellungen, new Date());
   for (const e of plan) {
+    // Jede Erinnerung einzeln absichern: ein Fehler darf die übrigen nicht verhindern
     await Notifications.scheduleNotificationAsync({
       content: {
         title: e.titel,
@@ -117,7 +118,7 @@ async function planen(db: SQLiteDatabase): Promise<number> {
         date: e.wann,
         channelId: KANAL_ID,
       },
-    });
+    }).catch((err) => console.warn('Erinnerung nicht geplant', e.titel, err));
   }
   // Monatsübersicht am letzten Werktag des Monats
   if (einstellungen.aktiv) {
@@ -131,7 +132,7 @@ async function planen(db: SQLiteDatabase): Promise<number> {
         data: { ziel: 'statistik', monat: monatsSchluessel(n.jahr, n.monat) },
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.wann, channelId: KANAL_ID },
-    });
+    }).catch((err) => console.warn('Monatsübersicht nicht geplant', err));
   }
   return plan.length;
 }

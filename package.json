@@ -1,6 +1,6 @@
 {
   "name": "wartungsapp",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "main": "expo-router/entry",
   "dependencies": {
     "@react-native-community/datetimepicker": "9.2.1",

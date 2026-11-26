@@ -25,3 +25,8 @@ export function elternZuerst(zeilen: Record<string, unknown>[]): Record<string, 
   return [...zeilen].sort((a, b) => (a.eltern_id ? 1 : 0) - (b.eltern_id ? 1 : 0));
 }
 
+
+/** Nur Tabellen ersetzen, die in der Sicherung auch vorkommen (ältere Sicherungen kennen z. B. das Magazin noch nicht). */
+export function tabellenZumErsetzen(s: Pick<Sicherung, 'tabellen'>): (typeof TABELLEN)[number][] {
+  return TABELLEN.filter((t) => Array.isArray(s.tabellen[t]));
+}

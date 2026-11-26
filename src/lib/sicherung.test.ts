@@ -13,3 +13,11 @@ test('Unterkategorien nach Hauptkategorien', () => {
   const r = elternZuerst([{ id: 't', eltern_id: 'h' }, { id: 'h', eltern_id: null }]);
   assert.deepEqual(r.map((x) => x.id), ['h', 't']);
 });
+
+import { tabellenZumErsetzen } from './sicherungFormat';
+
+test('Alte Sicherung ohne Magazin lässt das aktuelle Magazin in Ruhe', () => {
+  const t = tabellenZumErsetzen({ tabellen: { kategorien: [], eintraege: [], durchfuehrungen: [] } });
+  assert.deepEqual(t, ['kategorien', 'eintraege', 'durchfuehrungen']);
+  assert.ok(!t.includes('magazin'));
+});
